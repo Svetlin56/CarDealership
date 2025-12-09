@@ -1,0 +1,17 @@
+:root { --gap: 1rem; }
+img { object-fit: cover; }
+.card-img-top { height: 200px; }
+@media (min-width: 992px) {
+    .card-img-top { height: 240px; }
+}
+
+.nav-avatar {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    border: 2px solid white !important;
+    display: inline-block !important;
+}
+
+

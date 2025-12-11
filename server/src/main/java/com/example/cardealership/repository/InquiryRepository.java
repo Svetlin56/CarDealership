@@ -1,4 +1,4 @@
-package com.example.cardealership.repo;
+package com.example.cardealership.repository;
 
 import com.example.cardealership.domain.Inquiry;
 import org.springframework.data.jpa.repository.JpaRepository;

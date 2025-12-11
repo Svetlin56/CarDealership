@@ -1,7 +1,7 @@
 package com.example.cardealership.service;
 
 import com.example.cardealership.domain.User;
-import com.example.cardealership.repo.UserRepository;
+import com.example.cardealership.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

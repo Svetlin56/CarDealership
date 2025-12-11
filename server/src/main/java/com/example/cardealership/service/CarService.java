@@ -2,8 +2,8 @@ package com.example.cardealership.service;
 
 import com.example.cardealership.domain.Car;
 import com.example.cardealership.dto.CarDtos;
-import com.example.cardealership.repo.CarRepository;
-import com.example.cardealership.repo.ListingRepository;
+import com.example.cardealership.repository.CarRepository;
+import com.example.cardealership.repository.ListingRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -40,6 +40,5 @@ public class CarService {
         listingRepository.deleteByCar_Id(id);
         carRepository.deleteById(id);
     }
-
 
 }

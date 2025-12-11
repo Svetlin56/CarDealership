@@ -2,8 +2,8 @@ package com.example.cardealership.web;
 
 import com.example.cardealership.domain.Inquiry;
 import com.example.cardealership.domain.Listing;
-import com.example.cardealership.repo.InquiryRepository;
-import com.example.cardealership.repo.ListingRepository;
+import com.example.cardealership.repository.InquiryRepository;
+import com.example.cardealership.repository.ListingRepository;
 import com.example.cardealership.service.EmailService;
 import jakarta.validation.constraints.*;
 import lombok.Getter;

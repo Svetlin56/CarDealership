@@ -2,7 +2,7 @@ package com.example.cardealership.service;
 
 import com.example.cardealership.domain.*;
 import com.example.cardealership.dto.ListingDtos;
-import com.example.cardealership.repo.*;
+import com.example.cardealership.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

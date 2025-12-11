@@ -1,7 +1,7 @@
 package com.example.cardealership.security;
 
 import com.example.cardealership.domain.User;
-import com.example.cardealership.repo.UserRepository;
+import com.example.cardealership.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

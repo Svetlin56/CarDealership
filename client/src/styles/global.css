@@ -14,4 +14,8 @@ img { object-fit: cover; }
     display: inline-block !important;
 }
 
+button {
+    padding: 0.5rem 1rem;
+    margin-left: 10px;
+}
 

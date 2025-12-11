@@ -23,7 +23,7 @@ export default function CarDetails() {
                 <p>Year: {car.prodYear}</p>
                 <p>Mileage: {car.mileage?.toLocaleString()} km</p>
                 <p>VIN: {car.vin}</p>
-                <h4 className="text-success">{car.price.toLocaleString()} lv.</h4>
+                <h4 className="text-success">{car.price.toLocaleString()} €</h4>
             </div>
         </div>
     );

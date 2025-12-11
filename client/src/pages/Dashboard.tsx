@@ -9,7 +9,7 @@ export default function Dashboard() {
     const [form, setForm] = useState<any>({
         make:"",
         model:"",
-        year:2020,
+        year:2019,
         mileage:0,
         vin:"",
         price:0,
@@ -60,7 +60,7 @@ export default function Dashboard() {
                     <table className="table table-striped align-middle">
                         <thead>
                         <tr>
-                            <th>#</th><th>Car</th><th>Year</th><th>Mileage</th><th>Price</th><th></th>
+                            <th>№</th><th>Car</th><th>Year</th><th>Mileage</th><th>Price</th><th></th>
                         </tr>
                         </thead>
                         <tbody>
@@ -70,7 +70,7 @@ export default function Dashboard() {
                                 <td>{c.make} {c.model}</td>
                                 <td>{c.prodYear}</td>
                                 <td>{c.mileage?.toLocaleString()}</td>
-                                <td>{c.price.toLocaleString()} lv.</td>
+                                <td>{c.price.toLocaleString()} €</td>
                                 <td>
                                     <button
                                         className="btn btn-sm btn-outline-danger"

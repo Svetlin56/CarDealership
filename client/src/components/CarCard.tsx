@@ -9,7 +9,7 @@ export default function CarCard({ car }: { car: Car }) {
                 <h5 className="card-title">{car.make} {car.model}</h5>
                 <p className="card-text">{car.prodYear} • {car.mileage?.toLocaleString()} km</p>
                 <div className="mt-auto d-flex justify-content-between align-items-center">
-                    <strong>{car.price.toLocaleString()} lv.</strong>
+                    <strong>{car.price.toLocaleString()} €</strong>
                     <Link to={`/cars/${car.id}`} className="btn btn-primary">Details</Link>
                 </div>
             </div>

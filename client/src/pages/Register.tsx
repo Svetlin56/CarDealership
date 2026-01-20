@@ -21,7 +21,7 @@ export default function Register() {
             <h3>Registration</h3>
             <FormField label="Email" type="email" name="email" value={form.email} onChange={onChange} required />
             <FormField label="password (min. 6 symbols)" type="password" name="password" value={form.password} onChange={onChange} required />
-            <button className="btn btn-success">Create profile</button>
+            <button className="btn-success">Create profile</button>
         </form>
     );
 }

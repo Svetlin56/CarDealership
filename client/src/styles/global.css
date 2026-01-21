@@ -122,3 +122,7 @@ button {
 .btn-success:active {
     transform: translateY(-1px);
 }
+.btn-wrapper {
+    display: flex;
+    justify-content: center;
+}

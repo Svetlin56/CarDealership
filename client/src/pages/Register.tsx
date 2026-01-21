@@ -14,14 +14,16 @@ export default function Register() {
         const res = await http.post("/auth/register", form);
         localStorage.setItem("token", res.data.token);
         navigate("/dashboard");
-    };
+    }
 
     return (
         <form className="col-md-6 mx-auto needs-validation" noValidate onSubmit={onSubmit}>
             <h3>Registration</h3>
             <FormField label="Email" type="email" name="email" value={form.email} onChange={onChange} required />
-            <FormField label="password (min. 6 symbols)" type="password" name="password" value={form.password} onChange={onChange} required />
-            <button className="btn-success">Create profile</button>
+            <FormField label="Password (min. 6 symbols)" type="password" name="password" value={form.password} onChange={onChange} required />
+            <div className="btn-wrapper">
+                <button className="btn-success">Create profile</button>
+            </div>
         </form>
     );
 }

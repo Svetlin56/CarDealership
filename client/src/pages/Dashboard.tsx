@@ -7,33 +7,76 @@ import React from "react";
 export default function Dashboard() {
     const [cars, setCars] = useState<Car[]>([]);
     const [form, setForm] = useState<any>({
-        make:"",
-        model:"",
-        year:2019,
-        mileage:0,
-        vin:"",
-        price:0,
-        imageUrl:""
+        make: "",
+        model: "",
+        year: 2019,
+        mileage: 0,
+        vin: "",
+        price: 0,
+        imageUrl: ""
     });
 
-    const load = () => http.get("/cars").then(r => setCars(r.data));
-    useEffect(() => { load(); }, []);
+    const brands: Record<string, string[]> = {
+        BMW: ["X1","X2","X3","X4","X5", "X6", "M3"],
+        Audi: ["A1","A2","A3","A4","A5", "A6", "Q7"],
+        Mercedes: ["A-Class","B-Class","C-Class", "E-Class", "S-Class", "GLC"]
+    };
 
-    const onChange = (e:any)=> setForm({...form, [e.target.name]: e.target.value});
+    const brandOptions = Object.keys(brands).map(b => ({
+        value: b,
+        label: b
+    }));
 
-    const addCar = async (e:any) => {
+    const modelOptions =
+        form.make && brands[form.make]
+            ? brands[form.make].map(m => ({
+                value: m,
+                label: m
+            }))
+            : [];
+
+    const yearOptions = Array.from({ length: 85 }, (_, i) => {
+        const y = 2026 - i;
+        return { value: y, label: y.toString() };
+    });
+
+    const load = () =>
+        http.get("/cars").then(r => setCars(r.data));
+
+    useEffect(() => {
+        load();
+    }, []);
+
+    const onChange = (e: any) => {
+        const { name, value } = e.target;
+        setForm((prev: any) => ({
+            ...prev,
+            [name]: value,
+            ...(name === "make" ? { model: "" } : {})
+        }));
+    };
+
+    const addCar = async (e: any) => {
         e.preventDefault();
         await http.post("/cars", {
             ...form,
-            year:Number(form.year),
-            mileage:Number(form.mileage),
-            price:Number(form.price)
+            year: Number(form.year),
+            mileage: Number(form.mileage),
+            price: Number(form.price)
         });
-        setForm({ make:"", model:"", year:2020, mileage:0, vin:"", price:10000, imageUrl:"" });
+        setForm({
+            make: "",
+            model: "",
+            year: 2020,
+            mileage: 0,
+            vin: "",
+            price: 10000,
+            imageUrl: ""
+        });
         load();
     };
 
-    const remove = async (id:number) => {
+    const remove = async (id: number) => {
         await http.delete(`/cars/${id}`);
         load();
     };
@@ -42,17 +85,81 @@ export default function Dashboard() {
         <div className="row g-4">
             <div className="col-md-5">
                 <h4>Add cars</h4>
-                <form className="needs-validation" noValidate onSubmit={addCar}>
-                    <FormField label="Brand" name="make" value={form.make} onChange={onChange} required />
-                    <FormField label="Model" name="model" value={form.model} onChange={onChange} required />
-                    <FormField label="Year" type="number" name="year" value={form.year} onChange={onChange} required />
-                    <FormField label="Mileage" type="number" name="mileage" value={form.mileage} onChange={onChange} />
-                    <FormField label="VIN" name="vin" value={form.vin} onChange={onChange} />
-                    <FormField label="Price" type="number" name="price" value={form.price} onChange={onChange} required />
-                    <FormField label="Image (URL)" name="imageUrl" value={form.imageUrl} onChange={onChange} />
+                <form
+                    className="needs-validation"
+                    noValidate
+                    onSubmit={addCar}
+                >
+                    <FormField
+                        label="Brand"
+                        name="make"
+                        value={form.make}
+                        onChange={onChange}
+                        required
+                        as="select"
+                        options={brandOptions}
+                    />
+
+                    <FormField
+                        label="Model"
+                        name="model"
+                        value={form.model}
+                        onChange={onChange}
+                        required
+                        as="select"
+                        options={modelOptions}
+                        placeholder={
+                            form.make
+                                ? "Select Model"
+                                : "Select Brand first"
+                        }
+                    />
+
+                    <FormField
+                        label="Year"
+                        name="year"
+                        value={form.year}
+                        onChange={onChange}
+                        required
+                        as="select"
+                        options={yearOptions}
+                    />
+
+                    <FormField
+                        label="Mileage"
+                        type="number"
+                        name="mileage"
+                        value={form.mileage}
+                        onChange={onChange}
+                    />
+
+                    <FormField
+                        label="VIN"
+                        name="vin"
+                        value={form.vin}
+                        onChange={onChange}
+                    />
+
+                    <FormField
+                        label="Price"
+                        type="number"
+                        name="price"
+                        value={form.price}
+                        onChange={onChange}
+                        required
+                    />
+
+                    <FormField
+                        label="Image (URL)"
+                        name="imageUrl"
+                        value={form.imageUrl}
+                        onChange={onChange}
+                    />
 
                     {/* From Uiverse.io by cssbuttons-io */}
-                    <button className="save-button">Save</button>
+                    <button className="save-button">
+                        Save
+                    </button>
                 </form>
             </div>
 
@@ -62,25 +169,36 @@ export default function Dashboard() {
                     <table className="table table-striped align-middle">
                         <thead>
                         <tr>
-                            <th>№</th><th>Car</th><th>Year</th><th>Mileage</th><th>Price</th><th></th>
+                            <th>№</th>
+                            <th>Car</th>
+                            <th>Year</th>
+                            <th>Mileage</th>
+                            <th>Price</th>
+                            <th></th>
                         </tr>
                         </thead>
                         <tbody>
                         {cars.map(c => (
                             <tr key={c.id}>
                                 <td>{c.id}</td>
-                                <td>{c.make} {c.model}</td>
+                                <td>
+                                    {c.make} {c.model}
+                                </td>
                                 <td>{c.prodYear}</td>
-                                <td>{c.mileage?.toLocaleString()}</td>
-                                <td>{c.price.toLocaleString()} €</td>
+                                <td>
+                                    {c.mileage?.toLocaleString()}
+                                </td>
+                                <td>
+                                    {c.price.toLocaleString()} €
+                                </td>
                                 <td>
                                     {/* From Uiverse.io by vinodjangid07 */}
-                                    <button className="delete-button">
+                                    <button className="delete-button" onClick={() => remove(c.id)}>
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"
                                             fill="none"
                                             viewBox="0 0 69 14"
-                                            className="svgIcon bin-top"
+                                            class="svgIcon bin-top"
                                         >
                                             <g clip-path="url(#clip0_35_24)">
                                                 <path
@@ -99,7 +217,7 @@ export default function Dashboard() {
                                             xmlns="http://www.w3.org/2000/svg"
                                             fill="none"
                                             viewBox="0 0 69 57"
-                                            className="svgIcon bin-bottom"
+                                            class="svgIcon bin-bottom"
                                         >
                                             <g clip-path="url(#clip0_35_22)">
                                                 <path
@@ -114,7 +232,6 @@ export default function Dashboard() {
                                             </defs>
                                         </svg>
                                     </button>
-
                                 </td>
                             </tr>
                         ))}

@@ -3,6 +3,8 @@ package com.example.cardealership.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Entity @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Car {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -14,6 +16,6 @@ public class Car {
     private Long mileage;
     private String vin;
 
-    @Column(nullable=false) private Double price;
+    @Column(nullable=false) private BigDecimal price;
     private String imageUrl;
 }

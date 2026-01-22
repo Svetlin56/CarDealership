@@ -1,4 +1,5 @@
 package com.example.cardealership.dto;
+import java.math.BigDecimal;
 
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -8,10 +9,15 @@ public class CarDtos {
     public static class CreateCarRequest {
         @NotBlank private String make;
         @NotBlank private String model;
-        @Min(1900) @Max(2026) private Integer year;
-        @Min(0) private Long mileage;
+        @NotNull
+        @Min(value = 1886, message = "Year must be valid")
+        private Integer year;
+        @NotNull
+        @Min(value = 0, message = "Mileage cannot be negative")
+        private Long mileage;
         private String vin;
-        @NotNull @Positive private Double price;
+        @Min(value = 0, message = "Price cannot be negative")
+        private BigDecimal price;
         private String imageUrl;
     }
 

@@ -18,6 +18,7 @@ type Props = {
     as?: "input" | "textarea" | "select";
     placeholder?: string;
     options?: Option[];
+    min?: number;
 };
 
 export default function FormField({
@@ -30,7 +31,8 @@ export default function FormField({
                                       pattern,
                                       as = "input",
                                       placeholder,
-                                      options
+                                      options,
+                                      min
                                   }: Props) {
 
     if (as === "select") {
@@ -74,6 +76,8 @@ export default function FormField({
                 required={required}
                 pattern={pattern}
                 placeholder={placeholder}
+                min={type === "number" ? min : undefined}
+
             />
             <div className="invalid-feedback">
                 Please fix the field.

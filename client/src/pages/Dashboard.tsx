@@ -131,6 +131,7 @@ export default function Dashboard() {
                         name="mileage"
                         value={form.mileage}
                         onChange={onChange}
+                        min={0}
                     />
 
                     <FormField
@@ -147,6 +148,7 @@ export default function Dashboard() {
                         value={form.price}
                         onChange={onChange}
                         required
+                        min={0}
                     />
 
                     <FormField
@@ -198,7 +200,7 @@ export default function Dashboard() {
                                             xmlns="http://www.w3.org/2000/svg"
                                             fill="none"
                                             viewBox="0 0 69 14"
-                                            class="svgIcon bin-top"
+                                            className="svgIcon bin-top"
                                         >
                                             <g clip-path="url(#clip0_35_24)">
                                                 <path
@@ -217,7 +219,7 @@ export default function Dashboard() {
                                             xmlns="http://www.w3.org/2000/svg"
                                             fill="none"
                                             viewBox="0 0 69 57"
-                                            class="svgIcon bin-bottom"
+                                            className="svgIcon bin-bottom"
                                         >
                                             <g clip-path="url(#clip0_35_22)">
                                                 <path

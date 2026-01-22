@@ -29,7 +29,7 @@ public class CarDtos {
         private Integer year;
         private Long mileage;
         private String vin;
-        private Double price;
+        private BigDecimal price;
         private String imageUrl;
     }
 }

@@ -17,9 +17,13 @@ export default function Dashboard() {
     });
 
     const brands: Record<string, string[]> = {
-        BMW: ["X1","X2","X3","X4","X5", "X6", "M3"],
-        Audi: ["A1","A2","A3","A4","A5", "A6", "Q7"],
-        Mercedes: ["A-Class","B-Class","C-Class", "E-Class", "S-Class", "GLC"]
+        BMW: ["X1","X2","X3","X4","X5","X6","M3"],
+        Audi: ["A1","A2","A3","A4","A5","A6","Q7"],
+        Mercedes: ["A-Class","B-Class","C-Class","E-Class","S-Class","GLC"],
+        Peugeot: ["208", "2008", "308", "3008", "5008", "408", "Rifter"],
+        Fiat: ["500", "500X", "Panda", "Tipo", "Doblo", "Ducato", "600"],
+        VW: ["Polo", "Golf", "Passat", "Tiguan", "Touareg", "T-Roc", "ID.4"],
+        Citroen: ["C3", "C4", "C5 Aircross", "C3 Aircross", "Berlingo", "C4 X", "SpaceTourer"]
     };
 
     const brandOptions = Object.keys(brands).map(b => ({

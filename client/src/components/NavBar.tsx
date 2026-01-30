@@ -25,15 +25,19 @@ export default function NavBar() {
 
                 <div id="nav" className="collapse navbar-collapse">
                     <ul className="navbar-nav me-auto">
-                        <li className="nav-item">
-                            <NavLink to="/cars" className="nav-link">Cars</NavLink>
-                        </li>
 
                         {token && (
+                            <li className="nav-item">
+                                <NavLink to="/cars" className="nav-link">Cars</NavLink>
+                            </li>
+                        )}
+
+                        {token && user?.role === "ADMIN" && (
                             <li className="nav-item">
                                 <NavLink to="/dashboard" className="nav-link">Admin</NavLink>
                             </li>
                         )}
+
                     </ul>
 
                     <ul className="navbar-nav align-items-center">

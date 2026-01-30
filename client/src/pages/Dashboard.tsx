@@ -97,6 +97,18 @@ export default function Dashboard() {
         load();
     };
 
+    const [search, setSearch] = useState("");
+    const filteredCars = cars.filter(c => {
+        const q = search.toLowerCase();
+
+        return (
+            c.make.toLowerCase().includes(q) ||
+            c.model.toLowerCase().includes(q) ||
+            c.prodYear?.toString().includes(q) ||
+            c.vin?.toLowerCase().includes(q)
+        );
+    });
+
     return (
         <div className="row g-4">
             <div className="col-md-5">
@@ -183,6 +195,13 @@ export default function Dashboard() {
 
             <div className="col-md-7">
                 <h4>List</h4>
+                <input
+                    type="text"
+                    className="form-control mb-3"
+                    placeholder="Search by brand, model, year or VIN..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                />
                 <div className="table-responsive">
                     <table className="table table-striped align-middle">
                         <thead>
@@ -196,7 +215,7 @@ export default function Dashboard() {
                         </tr>
                         </thead>
                         <tbody>
-                        {cars.map(c => (
+                        {filteredCars.map(c => (
                             <tr key={c.id}>
                                 <td>{c.id}</td>
                                 <td>

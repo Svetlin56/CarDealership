@@ -5,24 +5,65 @@ import { useNavigate } from "react-router-dom";
 
 export default function Register() {
     const [form, setForm] = useState({ email: "", password: "" });
+    const [errors, setErrors] = useState<Record<string, string>>({});
     const navigate = useNavigate();
 
-    const onChange = (e:any) => setForm({...form, [e.target.name]: e.target.value});
+    const onChange = (e: any) => {
+        setForm({ ...form, [e.target.name]: e.target.value });
 
-    const onSubmit = async (e:any) => {
+        setErrors(prev => ({ ...prev, [e.target.name]: "" }));
+    };
+
+    const onSubmit = async (e: any) => {
         e.preventDefault();
-        const res = await http.post("/auth/register", form);
-        localStorage.setItem("token", res.data.token);
-        navigate("/dashboard");
-    }
+        setErrors({});
+
+        try {
+            const res = await http.post("/auth/register", form);
+            localStorage.setItem("token", res.data.token);
+            navigate("/dashboard");
+        } catch (err: any) {
+            if (err.response?.status === 400) {
+                const apiErrors = err.response.data.fieldErrors;
+                if (apiErrors) {
+                    setErrors(apiErrors);
+                }
+            }
+        }
+    };
 
     return (
-        <form className="col-md-6 mx-auto needs-validation" noValidate onSubmit={onSubmit}>
+        <form
+            className="col-md-6 mx-auto needs-validation"
+            noValidate
+            onSubmit={onSubmit}
+        >
             <h3>Registration</h3>
-            <FormField label="Email" type="email" name="email" value={form.email} onChange={onChange} required />
-            <FormField label="Password (min. 6 symbols)" type="password" name="password" value={form.password} onChange={onChange} required />
+
+            <FormField
+                label="Email"
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={onChange}
+                required
+                error={errors.email}
+            />
+
+            <FormField
+                label="Password (min. 6 symbols)"
+                type="password"
+                name="password"
+                value={form.password}
+                onChange={onChange}
+                required
+                error={errors.password}
+            />
+
             <div className="btn-wrapper">
-                <button className="btn-success">Create profile</button>
+                <button className="btn-success">
+                    Create profile
+                </button>
             </div>
         </form>
     );

@@ -8,8 +8,13 @@ public class AuthDtos {
     @Getter
     @Setter
     public static class RegisterRequest {
-        @Email @NotBlank private String email;
-        @Size(min=6, max=100) @NotBlank private String password;
+        @Email(message = "Must be a well-formed email address!")
+        @NotBlank
+        private String email;
+
+        @NotBlank
+        @Size(min = 6, max = 100, message = "Password must be at least 6 symbols!")
+        private String password;
     }
 
     @Getter

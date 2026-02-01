@@ -19,6 +19,7 @@ type Props = {
     placeholder?: string;
     options?: Option[];
     min?: number;
+    error?: string;
 };
 
 export default function FormField({
@@ -32,15 +33,17 @@ export default function FormField({
                                       as = "input",
                                       placeholder,
                                       options,
-                                      min
+                                      min,
+                                      error
                                   }: Props) {
 
     if (as === "select") {
         return (
             <div className="mb-3">
                 <label className="form-label">{label}</label>
+
                 <select
-                    className="form-select"
+                    className={`form-select ${error ? "is-invalid" : ""}`}
                     name={name}
                     value={value ?? ""}
                     onChange={onChange}
@@ -49,15 +52,19 @@ export default function FormField({
                     <option value="">
                         {placeholder ?? `Select ${label}`}
                     </option>
+
                     {options?.map(o => (
                         <option key={o.value} value={o.value}>
                             {o.label}
                         </option>
                     ))}
                 </select>
-                <div className="invalid-feedback">
-                    Please fix the field.
-                </div>
+
+                {error && (
+                    <div className="invalid-feedback">
+                        {error}
+                    </div>
+                )}
             </div>
         );
     }
@@ -67,8 +74,9 @@ export default function FormField({
     return (
         <div className="mb-3">
             <label className="form-label">{label}</label>
+
             <Cmp
-                className="form-control"
+                className={`form-control ${error ? "is-invalid" : ""}`}
                 type={as === "input" ? type : undefined}
                 name={name}
                 value={value as any}
@@ -77,11 +85,13 @@ export default function FormField({
                 pattern={pattern}
                 placeholder={placeholder}
                 min={type === "number" ? min : undefined}
-
             />
-            <div className="invalid-feedback">
-                Please fix the field.
-            </div>
+
+            {error && (
+                <div className="invalid-feedback">
+                    {error}
+                </div>
+            )}
         </div>
     );
 }

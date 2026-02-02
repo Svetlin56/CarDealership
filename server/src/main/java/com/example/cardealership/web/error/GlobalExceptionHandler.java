@@ -1,11 +1,14 @@
 package com.example.cardealership.web.error;
 
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.*;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -18,8 +21,11 @@ public class GlobalExceptionHandler {
                 .getFieldErrors()
                 .stream()
                 .collect(Collectors.toMap(
-                        fe -> fe.getField(),
-                        fe -> fe.getDefaultMessage(),
+                        FieldError::getField,
+                        fe -> Objects.requireNonNullElse(
+                                fe.getDefaultMessage(),
+                                "Invalid value"
+                        ),
                         (a, b) -> a
                 ));
 
@@ -34,7 +40,7 @@ public class GlobalExceptionHandler {
                 .stream()
                 .collect(Collectors.toMap(
                         v -> v.getPropertyPath().toString(),
-                        v -> v.getMessage(),
+                        ConstraintViolation::getMessage,
                         (a, b) -> a
                 ));
 
@@ -43,7 +49,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleOthers(Exception ex) {
+    public ResponseEntity<ApiError> handleOthers() {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiError("Internal server error", null));
     }

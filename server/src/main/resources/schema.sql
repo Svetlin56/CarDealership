@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS car (
     model VARCHAR(255) NOT NULL,
     prod_year INT,
     mileage BIGINT,
-    vin VARCHAR(255),
+    vin VARCHAR(255) UNIQUE,
     price DOUBLE PRECISION NOT NULL,
     image_url VARCHAR(1000)
     );

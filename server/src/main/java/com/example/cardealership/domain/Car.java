@@ -14,6 +14,7 @@ public class Car {
     @Column(nullable=false) private String model;
     private Integer prodYear;
     private Long mileage;
+    @Column(unique = true)
     private String vin;
 
     @Column(nullable=false) private BigDecimal price;

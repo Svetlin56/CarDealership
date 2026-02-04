@@ -53,4 +53,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiError("Internal server error", null));
     }
+
+    @ExceptionHandler(DuplicateVinException.class)
+    public ResponseEntity<ApiError> handleDuplicateVin(DuplicateVinException ex) {
+        return ResponseEntity
+                .badRequest()
+                .body(new ApiError(
+                        "Validation failed",
+                        Map.of("vin", "Car with this VIN already exists")
+                ));
+    }
+
+
 }

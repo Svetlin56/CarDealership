@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import http from "../api/http.js";
-import FormField from "../components/FormField.js";
-import { Car } from "../types/models.js";
+import http from "../api/http";
+import FormField from "../components/FormField";
+import { Car } from "../types/models";
 import React from "react";
 
 export default function Dashboard() {
     const [cars, setCars] = useState<Car[]>([]);
+    const [errors, setErrors] = useState<Record<string, string>>({});
     const [form, setForm] = useState<any>({
         make: "",
         model: "",
@@ -65,31 +66,50 @@ export default function Dashboard() {
 
     const onChange = (e: any) => {
         const { name, value } = e.target;
+
         setForm((prev: any) => ({
             ...prev,
             [name]: value,
             ...(name === "make" ? { model: "" } : {})
         }));
+
+        setErrors(prev => ({
+            ...prev,
+            [name]: ""
+        }));
     };
 
     const addCar = async (e: any) => {
         e.preventDefault();
-        await http.post("/cars", {
-            ...form,
-            year: Number(form.year),
-            mileage: Number(form.mileage),
-            price: Number(form.price)
-        });
-        setForm({
-            make: "",
-            model: "",
-            year: 2020,
-            mileage: 0,
-            vin: "",
-            price: 10000,
-            imageUrl: ""
-        });
-        load();
+        setErrors({});
+
+        try {
+            await http.post("/cars", {
+                ...form,
+                year: Number(form.year),
+                mileage: Number(form.mileage),
+                price: Number(form.price)
+            });
+
+            setForm({
+                make: "",
+                model: "",
+                year: 2020,
+                mileage: 0,
+                vin: "",
+                price: 10000,
+                imageUrl: ""
+            });
+
+            load();
+        } catch (err: any) {
+            if (err.response?.status === 400) {
+                const apiErrors = err.response.data.fieldErrors;
+                if (apiErrors) {
+                    setErrors(apiErrors);
+                }
+            }
+        }
     };
 
     const remove = async (id: number) => {
@@ -113,11 +133,8 @@ export default function Dashboard() {
         <div className="row g-4">
             <div className="col-md-5">
                 <h4>Add cars</h4>
-                <form
-                    className="needs-validation"
-                    noValidate
-                    onSubmit={addCar}
-                >
+                <form className="needs-validation" noValidate onSubmit={addCar}>
+
                     <FormField
                         label="Brand"
                         name="make"
@@ -136,11 +153,7 @@ export default function Dashboard() {
                         required
                         as="select"
                         options={modelOptions}
-                        placeholder={
-                            form.make
-                                ? "Select Model"
-                                : "Select Brand first"
-                        }
+                        placeholder={form.make ? "Select Model" : "Select Brand first"}
                     />
 
                     <FormField
@@ -167,6 +180,7 @@ export default function Dashboard() {
                         name="vin"
                         value={form.vin}
                         onChange={onChange}
+                        error={errors.vin}
                     />
 
                     <FormField
@@ -186,6 +200,7 @@ export default function Dashboard() {
                         onChange={onChange}
                     />
 
+
                     {/* From Uiverse.io by cssbuttons-io */}
                     <button className="save-button">
                         Save
@@ -202,6 +217,7 @@ export default function Dashboard() {
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                 />
+
                 <div className="table-responsive">
                     <table className="table table-striped align-middle">
                         <thead>
@@ -218,18 +234,11 @@ export default function Dashboard() {
                         {filteredCars.map(c => (
                             <tr key={c.id}>
                                 <td>{c.id}</td>
-                                <td>
-                                    {c.make} {c.model}
-                                </td>
+                                <td>{c.make} {c.model}</td>
                                 <td>{c.prodYear}</td>
-                                <td>
-                                    {c.mileage?.toLocaleString()}
-                                </td>
-                                <td>
-                                    {c.price.toLocaleString()} €
-                                </td>
-                                <td>
-                                    {/* From Uiverse.io by vinodjangid07 */}
+                                <td>{c.mileage?.toLocaleString()}</td>
+                                <td>{c.price.toLocaleString()} €</td>
+                                <td> {/* From Uiverse.io by vinodjangid07 */}
                                     <button className="delete-button" onClick={() => remove(c.id)}>
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"

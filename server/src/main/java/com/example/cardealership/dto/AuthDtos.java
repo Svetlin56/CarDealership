@@ -8,20 +8,24 @@ public class AuthDtos {
     @Getter
     @Setter
     public static class RegisterRequest {
+        @NotBlank(message = "Email field can't be empty!")
         @Email(message = "Must be a well-formed email address!")
-        @NotBlank
         private String email;
 
-        @NotBlank
-        @Size(min = 6, max = 100, message = "Password must be at least 6 symbols!")
+        @NotBlank(message = "Password field can't be empty!")
+        @Size(min = 6, message = "Password must be at least 6 symbols!")
         private String password;
     }
 
     @Getter
     @Setter
     public static class LoginRequest {
-        @Email @NotBlank private String email;
-        @NotBlank private String password;
+        @NotBlank(message = "Email field can't be empty!")
+        @Email(message = "Must be a well-formed email address!")
+        private String email;
+
+        @NotBlank(message = "Password field can't be empty!")
+        private String password;
     }
 
     @Getter

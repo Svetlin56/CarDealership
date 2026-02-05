@@ -5,13 +5,32 @@ import { useNavigate } from "react-router-dom";
 
 export default function Login() {
     const [form, setForm] = useState({ email: "", password: "" });
+    const [errors, setErrors] = useState<Record<string, string>>({});
     const navigate = useNavigate();
 
-    const onChange = (e: any) =>
+    const onChange = (e: any) => {
         setForm({ ...form, [e.target.name]: e.target.value });
+
+        setErrors(prev => ({ ...prev, [e.target.name]: "" }));
+    };
 
     const onSubmit = async (e: any) => {
         e.preventDefault();
+
+        const newErrors: Record<string, string> = {};
+
+        if (!form.email.trim()) {
+            newErrors.email = "Can't be empty!";
+        }
+
+        if (!form.password.trim()) {
+            newErrors.password = "Can't be empty!";
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
 
         try {
             const res = await http.post("/auth/login", form);
@@ -28,7 +47,7 @@ export default function Login() {
             }
 
         } catch (err) {
-            alert("Wrong email or password");
+            alert("Wrong email or password!");
         }
     };
 
@@ -48,6 +67,7 @@ export default function Login() {
                     value={form.email}
                     onChange={onChange}
                     required
+                    error={errors.email}
                 />
 
                 <FormField
@@ -57,9 +77,12 @@ export default function Login() {
                     value={form.password}
                     onChange={onChange}
                     required
+                    error={errors.password}
                 />
 
-                <button className="btn btn-primary w-100 mt-3">Login</button>
+                <button className="btn btn-primary w-100 mt-3">
+                    Login
+                </button>
             </form>
 
             <div className="text-center my-3">

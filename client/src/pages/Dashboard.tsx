@@ -238,6 +238,7 @@ export default function Dashboard() {
                                 <td>{c.prodYear}</td>
                                 <td>{c.mileage?.toLocaleString()}</td>
                                 <td>{c.price.toLocaleString()} €</td>
+
                                 <td> {/* From Uiverse.io by vinodjangid07 */}
                                     <button className="delete-button" onClick={() => remove(c.id)}>
                                         <svg

@@ -79,10 +79,12 @@ export default function Login() {
                     required
                     error={errors.password}
                 />
-
-                <button className="btn btn-primary w-100 mt-3">
-                    Login
-                </button>
+                {/* From Uiverse.io by cssbuttons-io */}
+                <div className="login-wrapper">
+                    <button className="login-button">
+                        Login
+                    </button>
+                </div>
             </form>
 
             <div className="text-center my-3">

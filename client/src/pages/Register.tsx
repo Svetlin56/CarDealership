@@ -60,6 +60,7 @@ export default function Register() {
                 error={errors.password}
             />
 
+            {/* From Uiverse.io by cssbuttons-io */}
             <div className="btn-wrapper">
                 <button className="btn-success">
                     Create profile

@@ -14,10 +14,10 @@ img { object-fit: cover; }
     display: inline-block !important;
 }
 
-button {
-    padding: 0.5rem 1rem;
-    margin-left: 10px;
-}
+/*button {*/
+/*    padding: 0.5rem 1rem;*/
+/*    margin-left: 10px;*/
+/*}*/
 
 /* From Uiverse.io by vinodjangid07 */
 .delete-button {
@@ -156,6 +156,40 @@ button {
     transform: translateY(-1px);
 }
 .login-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+{/* From Uiverse.io by cssbuttons-io */}
+.google-button {
+    padding: 1.3em 3em;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    font-weight: 500;
+    color: #000;
+    background-color: #ced4da;
+    border: none;
+    border-radius: 45px;
+    box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease 0s;
+    cursor: pointer;
+    outline: none;
+    margin-left: 195px;
+}
+
+.google-button:hover {
+    background-color: #23c483;
+    box-shadow: 0px 15px 20px rgba(46, 229, 157, 0.4);
+    color: #fff;
+    transform: translateY(-7px);
+}
+
+.google-button:active {
+    transform: translateY(-1px);
+}
+
+.buttonGoogle-wrapper {
     display: flex;
     justify-content: center;
 }

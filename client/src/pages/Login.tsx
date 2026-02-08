@@ -91,9 +91,11 @@ export default function Login() {
                 <span>or</span>
             </div>
 
+
+            {/* From Uiverse.io by cssbuttons-io */}
             <button
-                type="button"
-                className="btn btn-light border w-100 d-flex align-items-center justify-content-center gap-2"
+                type="buttonGoogle-wrapper"
+                className="google-button"
                 onClick={googleLogin}
             >
                 <img

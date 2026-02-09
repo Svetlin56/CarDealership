@@ -35,11 +35,9 @@ export default function Login() {
         try {
             const res = await http.post("/auth/login", form);
 
-            // Save token + user info
             localStorage.setItem("token", res.data.token);
             localStorage.setItem("user", JSON.stringify(res.data));
 
-            // Redirection based on role
             if (res.data.role === "ADMIN") {
                 navigate("/dashboard");
             } else {
@@ -93,18 +91,20 @@ export default function Login() {
 
 
             {/* From Uiverse.io by cssbuttons-io */}
-            <button
-                type="buttonGoogle-wrapper"
-                className="google-button"
-                onClick={googleLogin}
-            >
-                <img
-                    src="https://developers.google.com/identity/images/g-logo.png"
-                    alt="Google logo"
-                    style={{ width: "20px" }}
-                />
-                Login with Google
-            </button>
+            <div className="buttonGoogle-wrapper">
+                <button
+                    type="button"
+                    className="google-button"
+                    onClick={googleLogin}
+                >
+                    <img
+                        src="https://developers.google.com/identity/images/g-logo.png"
+                        alt="Google logo"
+                        style={{ width: "20px" }}
+                    />
+                    Login with Google
+                </button>
+            </div>
         </div>
     );
 }

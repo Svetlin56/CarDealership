@@ -175,7 +175,10 @@ img { object-fit: cover; }
     transition: all 0.3s ease 0s;
     cursor: pointer;
     outline: none;
-    margin-left: 195px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
 .google-button:hover {

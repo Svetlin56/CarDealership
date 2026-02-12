@@ -98,9 +98,10 @@ export default function Login() {
                     onClick={googleLogin}
                 >
                     <img
+                        className="google-img"
                         src="https://developers.google.com/identity/images/g-logo.png"
                         alt="Google logo"
-                        style={{ width: "20px" }}
+                        style={{ width: "23px" }}
                     />
                     Login with Google
                 </button>

@@ -101,7 +101,7 @@ export default function Login() {
                         className="google-img"
                         src="https://developers.google.com/identity/images/g-logo.png"
                         alt="Google logo"
-                        style={{ width: "23px" }}
+                        style={{ width: "24px" }}
                     />
                     Login with Google
                 </button>

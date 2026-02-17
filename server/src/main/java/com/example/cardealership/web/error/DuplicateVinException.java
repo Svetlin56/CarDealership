@@ -6,4 +6,3 @@ public class DuplicateVinException extends RuntimeException {
         super("Car with VIN " + vin + " already exists");
     }
 }
-

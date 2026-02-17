@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
-import com.example.cardealership.domain.Role;
 
 @Entity
 @Table(name = "users")

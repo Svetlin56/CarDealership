@@ -9,12 +9,17 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
 public class GoogleSuccessHandler implements AuthenticationSuccessHandler {
+
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
+
 
     private final JwtService jwtService;
     private final UserService userService;
@@ -41,7 +46,7 @@ public class GoogleSuccessHandler implements AuthenticationSuccessHandler {
 
         String token = jwtService.generateToken(user.getEmail(), user.getRole().name());
 
-        String redirectUrl = "http://localhost:5173/oauth-success"
+        String redirectUrl = frontendUrl + "/oauth-success"
                 + "?token=" + token
                 + "&email=" + user.getEmail()
                 + "&picture=" + picture;

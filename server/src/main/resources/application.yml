@@ -41,9 +41,9 @@ spring:
 jwt:
   secret: ${GOOGLE_JWT_SECRET}
 
-#cors:
-#  allowed-origins:
-#    - http://localhost:5173
+cors:
+  allowed-origins:
+    - http://localhost:5173
 
 app:
   frontendUrl: http://localhost:5173

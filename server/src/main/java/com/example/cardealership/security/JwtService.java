@@ -21,15 +21,13 @@ public class JwtService {
 
     private Key key;
 
-    private final long EXPIRATION = 1000L * 60 * 60 * 24;
-
     @PostConstruct
     public void init() {
-        byte[] keyBytes = Decoders.BASE64.decode(secret);
-        this.key = Keys.hmacShaKeyFor(keyBytes);
+        this.key = Keys.hmacShaKeyFor(secret.getBytes());
     }
 
     public String generateToken(String email, String role) {
+        long EXPIRATION = 1000L * 60 * 60 * 24;
         return Jwts.builder()
                 .setSubject(email)
                 .addClaims(Map.of("role", role))

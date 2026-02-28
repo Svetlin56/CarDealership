@@ -14,14 +14,21 @@ public class ListingService {
     private final CarRepository carRepo;
     private final UserRepository userRepo;
 
-    public Listing create(Long sellerId, ListingDtos.CreateListingRequest req) {
-        Car car = carRepo.findById(req.getCarId()).orElseThrow();
-        User seller = userRepo.findById(sellerId).orElseThrow();
+    public Listing createByEmail(String email, ListingDtos.CreateListingRequest req) {
+
+        User seller = userRepo.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        Car car = carRepo.findById(req.getCarId())
+                .orElseThrow(() -> new IllegalArgumentException("Car not found"));
+
         Listing listing = Listing.builder()
-                .car(car).seller(seller)
+                .car(car)
+                .seller(seller)
                 .description(req.getDescription())
                 .status(Listing.Status.ACTIVE)
                 .build();
+
         return listingRepo.save(listing);
     }
 
@@ -30,7 +37,13 @@ public class ListingService {
 
     public Listing updateStatus(Long id, ListingDtos.UpdateListingStatusRequest req) {
         Listing l = get(id);
-        l.setStatus(Listing.Status.valueOf(req.getStatus()));
+
+        try {
+            l.setStatus(Listing.Status.valueOf(req.getStatus().toUpperCase()));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid status value");
+        }
+
         return listingRepo.save(l);
     }
 }

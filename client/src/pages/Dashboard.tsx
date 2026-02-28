@@ -112,7 +112,7 @@ export default function Dashboard() {
         }
     };
 
-    const remove = async (id: number) => {
+    const remove = async (id: number | undefined) => {
         await http.delete(`/cars/${id}`);
         load();
     };

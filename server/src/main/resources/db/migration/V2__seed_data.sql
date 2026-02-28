@@ -13,7 +13,7 @@ INSERT INTO car (make, model, prod_year, mileage, vin, price, image_url) VALUES
     ('BMW','X5',2019,95000,'WBAKF2C01KG123460',45000.00,'https://hips.hearstapps.com/hmg-prod/images/2019-bmw-x5-gallery-lead-1544808509.jpg'),
     ('Toyota','Corolla',2020,85000,'JTDBU4EE9LJ123461',19000.00,'https://toyotacanada.scene7.com/is/image/toyotacanada/2020_Corolla_Sedan'),
     ('Ford','Mustang',2018,35000,'1FA6P8CF6JX123462',35000.00,'https://i.gaw.to/content/photos/31/45/314522_2018_Ford_Mustang.jpg'),
-    ('Nissan','GTR',2018,25000,'1N4BL4BV6MN123463',240000.00,'https://www.cnet.com/a/img/resize/b36beb7e10fd1ddc4de41c2ffa08f7576a5c1aa2/hub/2018/07/03/0824a3cc-e0c7-4b6b-83ed-1b2051208627/ogi1-001-2018-nissan-gtr-review.jpg'),
+    ('Nissan','GTR',2018,25000,'1N4BL4BV6MN123463',240000.00,'https://images.hgmsites.net/hug/nissan-gt-r_100631725_h.jpg'),
     ('Chevrolet','Malibu',2019,105000,'1G1ZD5ST4KF123464',23000.00,'https://dealerimages.dealereprocess.com/image/upload/w_1000/1081654.jpg');
 
 INSERT INTO listing (car_id, seller_id, description, status)

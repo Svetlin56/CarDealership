@@ -5,6 +5,7 @@ import com.example.cardealership.domain.Listing;
 import com.example.cardealership.repository.InquiryRepository;
 import com.example.cardealership.repository.ListingRepository;
 import com.example.cardealership.service.EmailService;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,24 +29,38 @@ public class InquiryController {
         @Pattern(regexp="^[+0-9\\- ]{6,20}$") @NotBlank private String phone;
         @Size(max=2000) private String message;
     }
+    @PostMapping("/{listingId}")
+    public ResponseEntity<Inquiry> create(
+            @PathVariable Long listingId,
+            @Valid @RequestBody InquiryRequest req
+    ) {
 
-    @PostMapping
-    public ResponseEntity<Inquiry> create(@RequestBody @jakarta.validation.Valid InquiryRequest req){
-        Listing l = listingRepo.findById(req.getListingId()).orElseThrow();
-        Inquiry inq = Inquiry.builder()
+        Listing l = listingRepo.findById(listingId)
+                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
+
+        if (l.getStatus() != Listing.Status.ACTIVE) {
+            throw new IllegalStateException("Cannot send inquiry for inactive listing");
+        }
+
+        Inquiry inquiry = Inquiry.builder()
                 .listing(l)
                 .name(req.getName())
                 .email(req.getEmail())
                 .phone(req.getPhone())
                 .message(req.getMessage())
                 .build();
-        Inquiry saved = inquiryRepo.save(inq);
+
+        Inquiry saved = inquiryRepo.save(inquiry);
+
+        String sellerEmail = l.getSeller().getEmail();
 
         emailService.sendInquiry(
-                "seller@example.com",
-                "New list request #" + l.getId(),
-                "from: " + req.getName() + "\nEmail: " + req.getEmail() + "\nTelephone: " + req.getPhone() +
-                        "\n\nMessage:\n" + (req.getMessage()==null?"(empty)":req.getMessage()));
+                sellerEmail,
+                "New inquiry for your listing",
+                "You have a new inquiry from " + req.getName() +
+                        " (" + req.getEmail() + ", " + req.getPhone() + ")\n\n" +
+                        req.getMessage()
+        );
 
         return ResponseEntity.ok(saved);
     }

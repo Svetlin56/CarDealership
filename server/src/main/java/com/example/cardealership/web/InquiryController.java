@@ -26,7 +26,8 @@ public class InquiryController {
         @NotNull private Long listingId;
         @NotBlank private String name;
         @Email @NotBlank private String email;
-        @Pattern(regexp="^[+0-9\\- ]{6,20}$") @NotBlank private String phone;
+        @Pattern(regexp="^[+0-9\\- ]{6,20}$")
+        @NotBlank private String phone;
         @Size(max=2000) private String message;
     }
     @PostMapping("/{listingId}")

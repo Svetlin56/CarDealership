@@ -8,6 +8,10 @@ spring:
     password: ${SQL_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  sql:
+    init:
+      mode: never
+
   jpa:
     open-in-view: false
     hibernate:
@@ -46,4 +50,4 @@ cors:
     - http://localhost:5173
 
 app:
-  frontendUrl: http://localhost:5173
+  frontend-url: http://localhost:5173

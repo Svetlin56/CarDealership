@@ -38,7 +38,7 @@ public class GoogleSuccessHandler implements AuthenticationSuccessHandler {
         String picture = oauth.getAttribute("picture");
 
         if (email == null) {
-            response.sendRedirect("http://localhost:5173/login?error=no_email");
+            response.sendRedirect(frontendUrl + "/login?error=no_email");
             return;
         }
 
@@ -47,7 +47,7 @@ public class GoogleSuccessHandler implements AuthenticationSuccessHandler {
         String token = jwtService.generateToken(user.getEmail(), user.getRole().name());
 
         String redirectUrl = frontendUrl + "/oauth-success"
-                + "?token=" + token
+                + "#token=" + token
                 + "&email=" + user.getEmail()
                 + "&picture=" + picture;
 

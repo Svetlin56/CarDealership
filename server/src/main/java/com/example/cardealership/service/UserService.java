@@ -7,14 +7,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.example.cardealership.domain.Role;
 
-
 @Service
 @RequiredArgsConstructor
 public class UserService {
+
     private final UserRepository repo;
     private final PasswordEncoder encoder;
 
     public User createUser(String email, String rawPassword) {
+
+        if (repo.findByEmail(email).isPresent()) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+
         User user = User.builder()
                 .email(email)
                 .passwordHash(encoder.encode(rawPassword))
@@ -29,15 +34,17 @@ public class UserService {
     }
 
     public User findOrCreateGoogleUser(String email) {
-        return repo.findByEmail(email).orElseGet(() -> {
 
-            User newUser = User.builder()
-                    .email(email)
-                    .passwordHash("GOOGLE_LOGIN")
-                    .role(Role.USER)
-                    .build();
+        return repo.findByEmail(email)
+                .orElseGet(() -> {
 
-            return repo.save(newUser);
-        });
+                    User user = User.builder()
+                            .email(email)
+                            .passwordHash("GOOGLE_AUTH")
+                            .role(Role.USER)
+                            .build();
+
+                    return repo.save(user);
+                });
     }
 }

@@ -5,7 +5,7 @@ export default function OAuthSuccess() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
+        const params = new URLSearchParams(window.location.hash.substring(1));
 
         const token = params.get("token");
         const email = params.get("email");

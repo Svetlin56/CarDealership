@@ -40,7 +40,7 @@ public class UserService {
 
                     User user = User.builder()
                             .email(email)
-                            .passwordHash("GOOGLE_AUTH")
+                            .passwordHash("GOOGLE_AUTHORISATION")
                             .role(Role.USER)
                             .build();
 

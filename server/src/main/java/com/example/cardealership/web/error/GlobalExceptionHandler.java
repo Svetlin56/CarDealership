@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -48,21 +49,40 @@ public class GlobalExceptionHandler {
                 .body(new ApiError("Validation failed", errors));
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleOthers() {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiError("Internal server error", null));
-    }
-
     @ExceptionHandler(DuplicateVinException.class)
     public ResponseEntity<ApiError> handleDuplicateVin(DuplicateVinException ex) {
         return ResponseEntity
-                .badRequest()
+                .status(HttpStatus.CONFLICT)
                 .body(new ApiError(
                         "Validation failed",
                         Map.of("vin", "Car with this VIN already exists")
                 ));
     }
 
+    @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
+    public ResponseEntity<ApiError> handleBadCredentials() {
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiError("Invalid email or password", null));
+    }
 
+    @ExceptionHandler(java.util.NoSuchElementException.class)
+    public ResponseEntity<ApiError> handleNotFound(NoSuchElementException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ApiError(ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> handleConflict(IllegalArgumentException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new ApiError(ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiError> handleOthers() {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiError("Internal server error", null));
+    }
 }

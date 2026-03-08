@@ -51,11 +51,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DuplicateVinException.class)
     public ResponseEntity<ApiError> handleDuplicateVin(DuplicateVinException ex) {
+
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body(new ApiError(
                         "Validation failed",
-                        Map.of("vin", "Car with this VIN already exists")
+                        Map.of("vin", ex.getMessage())
                 ));
     }
 

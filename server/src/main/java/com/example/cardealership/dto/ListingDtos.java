@@ -12,6 +12,6 @@ public class ListingDtos {
 
     @Getter @Setter
     public static class UpdateListingStatusRequest {
-        @NotBlank private String status; // ACTIVE/SOLD/HIDDEN
+        @NotBlank private String status;
     }
 }

@@ -3,4 +3,5 @@ package com.example.cardealership.repository;
 import com.example.cardealership.domain.Inquiry;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface InquiryRepository extends JpaRepository<Inquiry, Long> {}
+public interface InquiryRepository extends JpaRepository<Inquiry, Long> {
+}

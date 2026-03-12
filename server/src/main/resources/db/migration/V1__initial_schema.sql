@@ -11,10 +11,13 @@ CREATE TABLE car (
     model VARCHAR(255) NOT NULL,
     prod_year INT,
     mileage BIGINT,
-    vin VARCHAR(255) UNIQUE,
+    vin VARCHAR(17) NOT NULL UNIQUE,
     price DECIMAL(19,2) NOT NULL,
-    image_url VARCHAR(1000)
-);
+    image_url VARCHAR(1000),
+
+    CONSTRAINT vin_length_check CHECK (CHAR_LENGTH(vin) = 17),
+    CONSTRAINT vin_format_check CHECK (vin REGEXP '^[A-HJ-NPR-Z0-9]{17}$')
+    );
 
 CREATE TABLE listing (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,

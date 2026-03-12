@@ -1,25 +1,28 @@
+import React from "react";
+
 type Option = {
     value: string | number;
     label: string;
 };
 
 type Props = {
-    label: string;
-    type?: string;
-    name: string;
-    value: string | number | undefined;
+    label: string,
+    type?: string,
+    name: string,
+    value: string | number | undefined,
     onChange: (
         e: React.ChangeEvent<
             HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
         >
-    ) => void;
-    required?: boolean;
-    pattern?: string;
-    as?: "input" | "textarea" | "select";
-    placeholder?: string;
-    options?: Option[];
-    min?: number;
-    error?: string;
+    ) => void,
+    required?: boolean,
+    pattern?: string,
+    as?: "input" | "textarea" | "select",
+    placeholder?: string,
+    options?: Option[],
+    min?: number,
+    error?: string,
+    maxLength?: number
 };
 
 export default function FormField({
@@ -34,7 +37,8 @@ export default function FormField({
                                       placeholder,
                                       options,
                                       min,
-                                      error
+                                      error,
+                                      maxLength
                                   }: Props) {
 
     if (as === "select") {

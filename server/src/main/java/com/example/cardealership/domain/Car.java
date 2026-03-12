@@ -13,7 +13,7 @@ public class Car {
     @Column(nullable=false) private String model;
     private Integer prodYear;
     private Long mileage;
-    @Column(unique = true)
+    @Column(nullable = false, unique = true, length = 17)
     private String vin;
 
     @Column(nullable=false) private BigDecimal price;

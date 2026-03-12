@@ -67,9 +67,15 @@ export default function Dashboard() {
     const onChange = (e: any) => {
         const { name, value } = e.target;
 
+        let newValue = value;
+
+        if (name === "vin") {
+            newValue = value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 17);
+        }
+
         setForm((prev: any) => ({
             ...prev,
-            [name]: value,
+            [name]: newValue,
             ...(name === "make" ? { model: "" } : {})
         }));
 
@@ -101,7 +107,7 @@ export default function Dashboard() {
                 imageUrl: ""
             });
 
-            load();
+            await load();
         } catch (err: any) {
 
             const apiErrors =
@@ -117,7 +123,7 @@ export default function Dashboard() {
 
     const remove = async (id: number | undefined) => {
         await http.delete(`/cars/${id}`);
-        load();
+        await load();
     };
 
     const [search, setSearch] = useState("");
@@ -184,6 +190,7 @@ export default function Dashboard() {
                         value={form.vin}
                         onChange={onChange}
                         error={errors.vin}
+                        maxLength={17}
                     />
 
                     <FormField

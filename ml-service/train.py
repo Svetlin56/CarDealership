@@ -1,7 +1,6 @@
 import os
 import joblib
 import pandas as pd
-
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.impute import SimpleImputer
@@ -37,7 +36,7 @@ def main():
     df = df[expected_columns].copy()
     df = df.dropna(subset=["price"])
 
-    X = df[["make", "model", "year", "mileage"]]
+    x = df[["make", "model", "year", "mileage"]]
     y = df["price"]
 
     categorical_features = ["make", "model"]
@@ -67,20 +66,20 @@ def main():
         ))
     ])
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
+    x_train, x_test, y_train, y_test = train_test_split(
+        x, y, test_size=0.2, random_state=42
     )
 
-    pipeline.fit(X_train, y_train)
-    predictions = pipeline.predict(X_test)
+    pipeline.fit(x_train, y_train)
+    predictions = pipeline.predict(x_test)
 
     mae = mean_absolute_error(y_test, predictions)
-    rmse = mean_squared_error(y_test, predictions) ** 0.5
+    rise = mean_squared_error(y_test, predictions) ** 0.5
     r2 = r2_score(y_test, predictions)
 
     print("Training completed")
     print(f"MAE:  {mae:.2f}")
-    print(f"RMSE: {rmse:.2f}")
+    print(f"RISE: {rise:.2f}")
     print(f"R2:   {r2:.4f}")
 
     joblib.dump(pipeline, MODEL_PATH)

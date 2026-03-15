@@ -1,15 +1,13 @@
-# Server build
 server/target/
 
-# Frontend modules
 client/node_modules/
 
-# IDE files
+ml-service/venv
+
 .idea/
 *.iml
 *.ipr
 *.iws
 
-# Environment files
 .env
 *.env

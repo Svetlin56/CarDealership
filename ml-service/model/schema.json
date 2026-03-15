@@ -1,0 +1,31 @@
+{
+  "model_name": "car_price_prediction",
+  "version": "1.0",
+  "features": [
+    {
+      "name": "make",
+      "type": "string",
+      "description": "Car manufacturer"
+    },
+    {
+      "name": "model",
+      "type": "string",
+      "description": "Car model"
+    },
+    {
+      "name": "year",
+      "type": "integer",
+      "description": "Production year"
+    },
+    {
+      "name": "mileage",
+      "type": "integer",
+      "description": "Mileage in kilometers"
+    }
+  ],
+  "target": {
+    "name": "price",
+    "type": "number",
+    "description": "Car price in EUR"
+  }
+}

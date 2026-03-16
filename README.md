@@ -84,4 +84,12 @@ Development of a real-world web application
 
 👨‍💻 Author
 
-Developed for academic and educational purposes.
+Developed for academic and educational purposes. 
+
+This project uses the Car Price Prediction dataset published on Kaggle.
+
+Author: Mustafa Oz  
+Source: https://www.kaggle.com/code/mustafaoz158/car-price-prediction/notebook  
+License: Apache License 2.0
+
+The dataset is used for training a machine learning model that predicts vehicle prices based on vehicle characteristics such as year, mileage, engine size and fuel type.

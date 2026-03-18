@@ -5,7 +5,6 @@ client/node_modules/
 ml-service/venv
 
 ml-service/artifacts/
-*.pkl
 
 .idea/
 *.iml

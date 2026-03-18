@@ -4,7 +4,8 @@ client/node_modules/
 
 ml-service/venv
 
-ml-service/artifacts/car_price_pipeline.pkl
+ml-service/artifacts/
+*.pkl
 
 .idea/
 *.iml

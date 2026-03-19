@@ -1,42 +1,71 @@
-import os
+from flask import Flask, request, jsonify
 import joblib
 import pandas as pd
-from flask import Flask, request, jsonify
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "artifacts", "car_price_pipeline.pkl")
 
 app = Flask(__name__)
-pipeline = joblib.load(MODEL_PATH)
 
+model = joblib.load("artifacts/car_price_pipeline.pkl")
 
-@app.post("/predict")
+@app.route("/")
+def home():
+    return """
+    <h1>Car Price Prediction API</h1>
+    <p>Endpoints:</p>
+    <ul>
+        <li>POST /predict</li>
+        <li>POST /recommend</li>
+    </ul>
+    """
+
+@app.route("/predict", methods=["GET", "POST"])
 def predict():
-    payload = request.get_json()
+    if request.method == "GET":
+        return "Send POST request with JSON data"
 
-    required_fields = ["make", "model", "year", "mileage"]
-    missing = [field for field in required_fields if field not in payload]
-    if missing:
-        return jsonify({"error": f"Missing fields: {missing}"}), 400
+    try:
+        data = request.get_json()
+        df = pd.DataFrame([data])
 
-    input_df = pd.DataFrame([{
-        "make": payload["make"],
-        "model": payload["model"],
-        "year": payload["year"],
-        "mileage": payload["mileage"]
-    }])
+        prediction = model.predict(df)[0]
 
-    predicted_price = pipeline.predict(input_df)[0]
+        return jsonify({
+            "predicted_price": round(float(prediction), 2)
+        })
 
-    return jsonify({
-        "predictedPrice": round(float(predicted_price), 2)
-    })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
+def calculate_score(row):
+    score = 0
 
-@app.get("/health")
-def health():
-    return jsonify({"status": "UP"})
+    score += (row["Year"] - 2000) * 0.5
+    score += max(0, 200000 - row["Mileage"]) / 10000
+    score += (5 - row["Owner_Count"]) * 2
 
+    return score
+
+@app.route("/recommend", methods=["POST"])
+def recommend():
+    try:
+        data = request.get_json()
+        df = pd.DataFrame(data)
+
+        df["predicted_price"] = model.predict(df)
+
+        df["score"] = df.apply(calculate_score, axis=1)
+
+        df["value_score"] = df["score"] + (df["predicted_price"] / 10000)
+
+        df["good_deal"] = df["predicted_price"] > df["predicted_price"].mean()
+
+        df = df.sort_values(by="value_score", ascending=False)
+
+        result = df.head(5).to_dict(orient="records")
+
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(debug=True, host="0.0.0.0", port=5000)

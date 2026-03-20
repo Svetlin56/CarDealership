@@ -6,6 +6,7 @@ app = Flask(__name__)
 
 model = joblib.load("artifacts/car_price_pipeline.pkl")
 
+
 @app.route("/")
 def home():
     return """
@@ -16,6 +17,7 @@ def home():
         <li>POST /recommend</li>
     </ul>
     """
+
 
 @app.route("/predict", methods=["GET", "POST"])
 def predict():
@@ -33,7 +35,10 @@ def predict():
         })
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({
+            "error": str(e)
+        }), 400
+
 
 def calculate_score(row):
     score = 0
@@ -43,6 +48,7 @@ def calculate_score(row):
     score += (5 - row["Owner_Count"]) * 2
 
     return score
+
 
 @app.route("/recommend", methods=["POST"])
 def recommend():
@@ -54,9 +60,12 @@ def recommend():
 
         df["score"] = df.apply(calculate_score, axis=1)
 
-        df["value_score"] = df["score"] + (df["predicted_price"] / 10000)
+        if "price" in df.columns:
+            df["good_deal"] = df["predicted_price"] > df["price"]
+        else:
+            df["good_deal"] = df["predicted_price"] > df["predicted_price"].mean()
 
-        df["good_deal"] = df["predicted_price"] > df["predicted_price"].mean()
+        df["value_score"] = df["score"] + (df["predicted_price"] / 10000)
 
         df = df.sort_values(by="value_score", ascending=False)
 
@@ -66,6 +75,7 @@ def recommend():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

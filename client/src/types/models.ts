@@ -8,3 +8,18 @@ export type Car = {
     price: number;
     imageUrl?: string;
 }
+
+export type RecommendationCar = {
+    year: number;
+    engineSize: number;
+    fuelType: string;
+    transmission: string;
+    mileage: number;
+    doors: number;
+    ownerCount: number;
+    predictedPrice: number;
+    score: number;
+    valueScore: number;
+    goodDeal: boolean;
+    price?: number;
+};

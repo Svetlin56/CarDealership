@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import http from "../api/http";
-import { RecommendationCar } from "../types/models";
 
 export default function Recommendations() {
-    const [cars, setCars] = useState<RecommendationCar[]>([]);
+    const [cars, setCars] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -32,27 +31,37 @@ export default function Recommendations() {
                         <div className="card shadow-sm h-100">
                             <div className="card-body">
                                 <h5 className="card-title">
-                                    Car #{index + 1}
+                                    {car.Brand} {car.Model || ""} #{index + 1}
                                 </h5>
 
-                                <p className="mb-1"><strong>Year:</strong> {car.year}</p>
-                                <p className="mb-1"><strong>Fuel:</strong> {car.fuelType}</p>
-                                <p className="mb-1"><strong>Transmission:</strong> {car.transmission}</p>
-                                <p className="mb-1"><strong>Mileage:</strong> {car.mileage?.toLocaleString()} km</p>
-                                <p className="mb-1"><strong>Engine Size:</strong> {car.engineSize}</p>
-                                <p className="mb-1"><strong>Doors:</strong> {car.doors}</p>
-                                <p className="mb-1"><strong>Owners:</strong> {car.ownerCount}</p>
+                                <p className="mb-1"><strong>Year:</strong> {car.Year}</p>
+                                <p className="mb-1"><strong>Fuel:</strong> {car.Fuel_Type}</p>
+                                <p className="mb-1"><strong>Transmission:</strong> {car.Transmission}</p>
+                                <p className="mb-1"><strong>Mileage:</strong> {car.Mileage?.toLocaleString()} km</p>
+                                <p className="mb-1"><strong>Engine Size:</strong> {car.Engine_Size}</p>
+                                <p className="mb-1"><strong>Doors:</strong> {car.Doors}</p>
+                                <p className="mb-1"><strong>Owners:</strong> {car.Owner_Count}</p>
 
                                 {car.price !== undefined && (
-                                    <p className="mb-1"><strong>Real Price:</strong> {car.price} €</p>
+                                    <p className="mb-1">
+                                        <strong>Real Price:</strong> {Number(car.price).toLocaleString()} €
+                                    </p>
                                 )}
 
-                                <p className="mb-1"><strong>Predicted Price:</strong> {car.predictedPrice?.toFixed(2)} €</p>
-                                <p className="mb-1"><strong>Score:</strong> {car.score?.toFixed(2)}</p>
-                                <p className="mb-1"><strong>Value Score:</strong> {car.valueScore?.toFixed(2)}</p>
+                                <p className="mb-1">
+                                    <strong>Predicted Price:</strong> {car.predicted_price?.toFixed(2)} €
+                                </p>
 
-                                <div className={`mt-3 badge ${car.goodDeal ? "bg-success" : "bg-secondary"}`}>
-                                    {car.goodDeal ? "Good Deal" : "Average Deal"}
+                                <p className="mb-1">
+                                    <strong>Score:</strong> {car.score?.toFixed(2)}
+                                </p>
+
+                                <p className="mb-1">
+                                    <strong>Value Score:</strong> {car.value_score?.toFixed(2)}
+                                </p>
+
+                                <div className={`mt-3 badge ${car.good_deal ? "bg-success" : "bg-secondary"}`}>
+                                    {car.good_deal ? "Good Deal" : "Average Deal"}
                                 </div>
                             </div>
                         </div>

@@ -4,43 +4,39 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 public class MlRecommendationResponse {
 
     @JsonProperty("Year")
-    private Integer year;
+    private Integer Year;
 
     @JsonProperty("Engine_Size")
-    private Double engineSize;
+    private Double Engine_Size;
 
     @JsonProperty("Fuel_Type")
-    private String fuelType;
+    private String Fuel_Type;
 
     @JsonProperty("Transmission")
-    private String transmission;
+    private String Transmission;
 
     @JsonProperty("Mileage")
-    private Long mileage;
+    private Long Mileage;
 
     @JsonProperty("Doors")
-    private Integer doors;
+    private Integer Doors;
 
     @JsonProperty("Owner_Count")
-    private Integer ownerCount;
-
-    @JsonProperty("predicted_price")
-    private Double predictedPrice;
-
-    @JsonProperty("score")
-    private Double score;
-
-    @JsonProperty("value_score")
-    private Double valueScore;
-
-    @JsonProperty("good_deal")
-    private Boolean goodDeal;
+    private Integer Owner_Count;
 
     @JsonProperty("price")
-    private Double price;
+    private BigDecimal price;
+
+    @JsonProperty("Brand")
+    private String Brand;
+
+    @JsonProperty("Model")
+    private String Model;
 }

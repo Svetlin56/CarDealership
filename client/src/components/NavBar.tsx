@@ -1,4 +1,3 @@
-
 import { Link, NavLink, useNavigate } from "react-router-dom";
 
 export default function NavBar() {
@@ -29,6 +28,14 @@ export default function NavBar() {
                         {token && (
                             <li className="nav-item">
                                 <NavLink to="/cars" className="nav-link">Cars</NavLink>
+                            </li>
+                        )}
+
+                        {token && (
+                            <li className="nav-item">
+                                <NavLink to="/recommendations" className="nav-link">
+                                    Recommendations
+                                </NavLink>
                             </li>
                         )}
 

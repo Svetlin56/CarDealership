@@ -17,4 +17,6 @@ public class MlRecommendationRequest {
     private Integer Doors;
     private Integer Owner_Count;
     private BigDecimal price;
+    private String Brand;
+    private String Model;
 }

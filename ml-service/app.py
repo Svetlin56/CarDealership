@@ -3,30 +3,32 @@ import joblib
 import pandas as pd
 
 app = Flask(__name__)
-
 model = joblib.load("artifacts/car_price_pipeline.pkl")
-
 
 @app.route("/")
 def home():
-    return """
-    <h1>Car Price Prediction API</h1>
-    <p>Endpoints:</p>
-    <ul>
-        <li>POST /predict</li>
-        <li>POST /recommend</li>
-    </ul>
-    """
+    return "ML Service is running"
 
 
-@app.route("/predict", methods=["GET", "POST"])
+@app.route("/predict", methods=["POST"])
 def predict():
-    if request.method == "GET":
-        return "Send POST request with JSON data"
-
     try:
         data = request.get_json()
         df = pd.DataFrame([data])
+
+        model_features = [
+            "Year",
+            "Engine_Size",
+            "Fuel_Type",
+            "Transmission",
+            "Mileage",
+            "Doors",
+            "Owner_Count",
+            "Brand",
+            "Model"
+        ]
+
+        df = df.reindex(columns=model_features, fill_value=0)
 
         prediction = model.predict(df)[0]
 
@@ -35,18 +37,15 @@ def predict():
         })
 
     except Exception as e:
-        return jsonify({
-            "error": str(e)
-        }), 400
+        print("PREDICT ERROR:", str(e))
+        return jsonify({"error": str(e)}), 400
 
 
 def calculate_score(row):
     score = 0
-
     score += (row["Year"] - 2000) * 0.5
     score += max(0, 200000 - row["Mileage"]) / 10000
     score += (5 - row["Owner_Count"]) * 2
-
     return score
 
 
@@ -54,16 +53,38 @@ def calculate_score(row):
 def recommend():
     try:
         data = request.get_json()
+        print("RAW DATA:", data)
+
         df = pd.DataFrame(data)
 
-        df["predicted_price"] = model.predict(df)
+        model_features = [
+            "Year",
+            "Engine_Size",
+            "Fuel_Type",
+            "Transmission",
+            "Mileage",
+            "Doors",
+            "Owner_Count",
+            "Brand",
+            "Model"
+        ]
+
+        for col in model_features:
+            if col not in df.columns:
+                df[col] = 0
+
+        df_model = df[model_features].fillna(0)
+
+        print("DF MODEL:", df_model.columns.tolist())
+
+        df["predicted_price"] = model.predict(df_model)
 
         df["score"] = df.apply(calculate_score, axis=1)
 
         if "price" in df.columns:
             df["good_deal"] = df["predicted_price"] > df["price"]
         else:
-            df["good_deal"] = df["predicted_price"] > df["predicted_price"].mean()
+            df["good_deal"] = False
 
         df["value_score"] = df["score"] + (df["predicted_price"] / 10000)
 
@@ -74,6 +95,7 @@ def recommend():
         return jsonify(result)
 
     except Exception as e:
+        print("RECOMMEND ERROR:", str(e))
         return jsonify({"error": str(e)}), 400
 
 

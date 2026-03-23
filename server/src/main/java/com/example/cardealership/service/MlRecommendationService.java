@@ -1,7 +1,5 @@
 package com.example.cardealership.service;
 
-import com.example.cardealership.dto.MlRecommendationRequest;
-import com.example.cardealership.dto.MlRecommendationResponse;
 import com.example.cardealership.domain.Car;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
@@ -9,7 +7,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -20,59 +18,72 @@ public class MlRecommendationService {
     private static final String ML_RECOMMEND_URL = "http://localhost:5000/recommend";
     private static final String ML_PREDICT_URL = "http://localhost:5000/predict";
 
-    public List<MlRecommendationResponse> recommend(List<Car> cars) {
-        List<MlRecommendationRequest> payload = cars.stream()
-                .map(this::mapCarToRecommendationRequest)
-                .toList();
+    public List<Map<String, Object>> recommend(List<Car> cars) {
+        try {
+            List<Map<String, Object>> payload = cars.stream()
+                    .map(this::mapCar)
+                    .toList();
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+            System.out.println("=== SENDING TO ML ===");
+            System.out.println(payload);
 
-        HttpEntity<List<MlRecommendationRequest>> requestEntity = new HttpEntity<>(payload, headers);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
 
-        ResponseEntity<List<MlRecommendationResponse>> response = restTemplate.exchange(
-                ML_RECOMMEND_URL,
-                HttpMethod.POST,
-                requestEntity,
-                new ParameterizedTypeReference<>() {}
-        );
+            HttpEntity<List<Map<String, Object>>> requestEntity =
+                    new HttpEntity<>(payload, headers);
 
-        return response.getBody();
+            ResponseEntity<List<Map<String, Object>>> response =
+                    restTemplate.exchange(
+                            ML_RECOMMEND_URL,
+                            HttpMethod.POST,
+                            requestEntity,
+                            new ParameterizedTypeReference<>() {}
+                    );
+
+            return response.getBody();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("ML service failed: " + e.getMessage());
+        }
     }
 
     public Double predict(Car car) {
-        MlRecommendationRequest payload = mapCarToRecommendationRequest(car);
+        Map<String, Object> payload = mapCar(car);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        HttpEntity<MlRecommendationRequest> requestEntity = new HttpEntity<>(payload, headers);
+        HttpEntity<Map<String, Object>> requestEntity =
+                new HttpEntity<>(payload, headers);
 
         var response = restTemplate.exchange(
                 ML_PREDICT_URL,
                 HttpMethod.POST,
                 requestEntity,
-                java.util.Map.class
+                Map.class
         );
 
-        assert response.getBody() != null;
         Object value = response.getBody().get("predicted_price");
         return value == null ? null : Double.parseDouble(value.toString());
     }
 
-    private MlRecommendationRequest mapCarToRecommendationRequest(Car car) {
-        MlRecommendationRequest dto = new MlRecommendationRequest();
+    private Map<String, Object> mapCar(Car car) {
+        Map<String, Object> m = new HashMap<>();
 
-        dto.setYear(car.getProdYear());
-        dto.setEngine_Size(2.0);
-        dto.setFuel_Type("Petrol");
-        dto.setTransmission("Manual");
-        dto.setDoors(4);
-        dto.setOwner_Count(1);
+        m.put("Year", car.getProdYear() != null ? car.getProdYear() : 2000);
+        m.put("Engine_Size", 2.0);
+        m.put("Fuel_Type", "Petrol");
+        m.put("Transmission", "Manual");
+        m.put("Mileage", car.getMileage() != null ? car.getMileage() : 0L);
+        m.put("Doors", 4);
+        m.put("Owner_Count", 1);
+        m.put("price", car.getPrice() != null ? car.getPrice() : 0);
 
-        dto.setMileage(car.getMileage());
-        dto.setPrice(car.getPrice());
+        m.put("Brand", "Generic");
+        m.put("Model", "Generic");
 
-        return dto;
+        return m;
     }
 }

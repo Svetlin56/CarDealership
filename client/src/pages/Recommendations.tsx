@@ -1,8 +1,35 @@
 import { useEffect, useState } from "react";
 import http from "../api/http";
+import type { RecommendationCar } from "../types/models";
+
+function getAnomalyBadgeClass(label: RecommendationCar["anomaly_label"]) {
+    switch (label) {
+        case "OVERPRICED":
+            return "bg-danger";
+        case "UNDERVALUED":
+            return "bg-success";
+        case "FAIR":
+            return "bg-warning text-dark";
+        default:
+            return "bg-secondary";
+    }
+}
+
+function getAnomalyText(label: RecommendationCar["anomaly_label"]) {
+    switch (label) {
+        case "OVERPRICED":
+            return "Overpriced";
+        case "UNDERVALUED":
+            return "Undervalued";
+        case "FAIR":
+            return "Fair Price";
+        default:
+            return "Unknown";
+    }
+}
 
 export default function Recommendations() {
-    const [cars, setCars] = useState<any[]>([]);
+    const [cars, setCars] = useState<RecommendationCar[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -60,8 +87,18 @@ export default function Recommendations() {
                                     <strong>Value Score:</strong> {car.value_score?.toFixed(2)}
                                 </p>
 
-                                <div className={`mt-3 badge ${car.good_deal ? "bg-success" : "bg-secondary"}`}>
-                                    {car.good_deal ? "Good Deal" : "Average Deal"}
+                                <p className="mb-2">
+                                    <strong>Anomaly Ratio:</strong> {(car.anomaly_ratio * 100).toFixed(2)}%
+                                </p>
+
+                                <div className="d-flex gap-2 flex-wrap mt-3">
+                                    <span className={`badge ${car.good_deal ? "bg-success" : "bg-secondary"}`}>
+                                        {car.good_deal ? "Good Deal" : "Average Deal"}
+                                    </span>
+
+                                    <span className={`badge ${getAnomalyBadgeClass(car.anomaly_label)}`}>
+                                        {getAnomalyText(car.anomaly_label)}
+                                    </span>
                                 </div>
                             </div>
                         </div>

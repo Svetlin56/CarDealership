@@ -10,16 +10,20 @@ export type Car = {
 }
 
 export type RecommendationCar = {
-    year: number;
-    engineSize: number;
-    fuelType: string;
-    transmission: string;
-    mileage: number;
-    doors: number;
-    ownerCount: number;
-    predictedPrice: number;
-    score: number;
-    valueScore: number;
-    goodDeal: boolean;
+    Year: number;
+    Engine_Size: number;
+    Fuel_Type: string;
+    Transmission: string;
+    Mileage: number;
+    Doors: number;
+    Owner_Count: number;
+    Brand: string;
+    Model: string;
     price?: number;
+    predicted_price: number;
+    score: number;
+    value_score: number;
+    good_deal: boolean;
+    anomaly_ratio: number;
+    anomaly_label: "OVERPRICED" | "UNDERVALUED" | "FAIR" | "UNKNOWN";
 };

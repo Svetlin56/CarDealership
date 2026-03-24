@@ -5,6 +5,35 @@ import pandas as pd
 app = Flask(__name__)
 model = joblib.load("artifacts/car_price_pipeline.pkl")
 
+
+def get_anomaly_data(real_price, predicted_price):
+    if real_price is None:
+        return {
+            "anomaly_ratio": 0.0,
+            "anomaly_label": "UNKNOWN"
+        }
+
+    if predicted_price is None or predicted_price == 0:
+        return {
+            "anomaly_ratio": 0.0,
+            "anomaly_label": "UNKNOWN"
+        }
+
+    ratio = (float(real_price) - float(predicted_price)) / float(predicted_price)
+
+    if ratio > 0.25:
+        label = "OVERPRICED"
+    elif ratio < -0.25:
+        label = "UNDERVALUED"
+    else:
+        label = "FAIR"
+
+    return {
+        "anomaly_ratio": round(ratio, 4),
+        "anomaly_label": label
+    }
+
+
 @app.route("/")
 def home():
     return "ML Service is running"
@@ -32,8 +61,13 @@ def predict():
 
         prediction = model.predict(df)[0]
 
+        real_price = data.get("price")
+        anomaly = get_anomaly_data(real_price, prediction)
+
         return jsonify({
-            "predicted_price": round(float(prediction), 2)
+            "predicted_price": round(float(prediction), 2),
+            "anomaly_ratio": anomaly["anomaly_ratio"],
+            "anomaly_label": anomaly["anomaly_label"]
         })
 
     except Exception as e:
@@ -78,6 +112,7 @@ def recommend():
         print("DF MODEL:", df_model.columns.tolist())
 
         df["predicted_price"] = model.predict(df_model)
+        df["predicted_price"] = df["predicted_price"].round(2)
 
         df["score"] = df.apply(calculate_score, axis=1)
 
@@ -87,6 +122,20 @@ def recommend():
             df["good_deal"] = False
 
         df["value_score"] = df["score"] + (df["predicted_price"] / 10000)
+
+        if "price" in df.columns:
+            anomaly_results = df.apply(
+                lambda row: pd.Series(
+                    get_anomaly_data(row["price"], row["predicted_price"])
+                ),
+                axis=1
+            )
+
+            df["anomaly_ratio"] = anomaly_results["anomaly_ratio"]
+            df["anomaly_label"] = anomaly_results["anomaly_label"]
+        else:
+            df["anomaly_ratio"] = 0.0
+            df["anomaly_label"] = "UNKNOWN"
 
         df = df.sort_values(by="value_score", ascending=False)
 

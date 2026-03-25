@@ -76,7 +76,7 @@ export default function Recommendations() {
                                 )}
 
                                 <p className="mb-1">
-                                    <strong>Predicted Price:</strong> {car.predicted_price?.toFixed(2)} €
+                                    <strong>Predicted Price:</strong> {Number(car.predicted_price || 0).toFixed(2)} €
                                 </p>
 
                                 <p className="mb-1">

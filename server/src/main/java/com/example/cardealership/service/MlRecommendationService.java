@@ -2,7 +2,6 @@ package com.example.cardealership.service;
 
 import com.example.cardealership.domain.Car;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -45,43 +44,47 @@ public class MlRecommendationService {
             HttpEntity<List<Map<String, Object>>> requestEntity =
                     new HttpEntity<>(payload, headers);
 
-            ResponseEntity<List<Map<String, Object>>> response =
+            ResponseEntity<Object[]> response =
                     restTemplate.exchange(
                             ML_RECOMMEND_URL,
                             HttpMethod.POST,
                             requestEntity,
-                            new ParameterizedTypeReference<>() {}
+                            Object[].class
                     );
 
-            List<Map<String, Object>> result =
-                    response.getBody() != null ? response.getBody() : Collections.emptyList();
+            Object[] body = response.getBody();
+
+            if (body == null) {
+                throw new RuntimeException("ML returned null body");
+            }
+
+            List<Map<String, Object>> result = new ArrayList<>();
+
+            for (Object obj : body) {
+                if (obj instanceof Map<?, ?> map) {
+                    result.add((Map<String, Object>) map);
+                }
+            }
 
             if (result.isEmpty()) {
                 return result;
             }
 
-            List<Map<String, Object>> filtered = result.stream()
-                    .filter(car -> {
-                        Object label = car.get("anomaly_label");
-                        return label != null &&
-                                (label.equals("UNDERVALUED") || label.equals("FAIR"));
-                    })
-                    .toList();
-
-            List<Map<String, Object>> finalList =
-                    filtered.isEmpty() ? result : filtered;
-
+            List<Map<String, Object>> finalList = new ArrayList<>(result);
             finalList.sort((a, b) -> {
                 double v1 = getDouble(a.get("value_score"));
                 double v2 = getDouble(b.get("value_score"));
                 return Double.compare(v2, v1);
             });
 
+            for (Map<String, Object> car : finalList) {
+                car.put("car_type", classifyCar(car));
+            }
             return finalList;
 
         } catch (Exception e) {
-            System.err.println("ML ERROR: " + e.getMessage());
-            throw new RuntimeException("ML service failed: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("ML service failed: ", e);
         }
     }
 
@@ -114,6 +117,26 @@ public class MlRecommendationService {
             System.err.println("PREDICT ERROR: " + e.getMessage());
             return null;
         }
+    }
+
+    private String classifyCar(Map<String, Object> car) {
+        int year = (int) getDouble(car.get("Year"));
+        long mileage = (long) getDouble(car.get("Mileage"));
+        String brand = String.valueOf(car.get("Brand")).toLowerCase();
+        String model = String.valueOf(car.get("Model")).toLowerCase();
+
+        if (model.contains("gtr") || model.contains("mustang") || brand.contains("porsche")) {
+            return "SPORT";
+        }
+
+        if (model.contains("corolla") || model.contains("passat") || model.contains("c-class")) {
+            return "FAMILY";
+        }
+
+        if (brand.contains("mercedes") || brand.contains("bmw") || brand.contains("audi")) {
+            return "LUXURY";
+        }
+        return "CITY";
     }
 
     private Map<String, Object> mapCar(Car car) {

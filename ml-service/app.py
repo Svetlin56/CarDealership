@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import joblib
 import pandas as pd
+import numpy as np
 
 app = Flask(__name__)
 model = joblib.load("artifacts/car_price_pipeline.pkl")
@@ -140,6 +141,14 @@ def recommend():
         df = df.sort_values(by="value_score", ascending=False)
 
         result = df.head(5).to_dict(orient="records")
+
+
+        for r in result:
+            for k, v in r.items():
+                if isinstance(v, (np.float32, np.float64)):
+                    r[k] = float(v)
+                elif isinstance(v, (np.int32, np.int64)):
+                    r[k] = int(v)
 
         return jsonify(result)
 

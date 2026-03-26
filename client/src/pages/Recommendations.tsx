@@ -2,6 +2,36 @@ import { useEffect, useState } from "react";
 import http from "../api/http";
 import type { RecommendationCar } from "../types/models";
 
+function getCarTypeText(type: string) {
+    switch (type) {
+        case "FAMILY":
+            return "Family Car";
+        case "SPORT":
+            return "Sport Car";
+        case "LUXURY":
+            return "Luxury Car";
+        case "CITY":
+            return "City Car";
+        default:
+            return "Unknown";
+    }
+}
+
+function getCarTypeBadge(type: string) {
+    switch (type) {
+        case "FAMILY":
+            return "bg-primary";
+        case "SPORT":
+            return "bg-danger";
+        case "LUXURY":
+            return "bg-dark";
+        case "CITY":
+            return "bg-info";
+        default:
+            return "bg-secondary";
+    }
+}
+
 function getAnomalyBadgeClass(label: RecommendationCar["anomaly_label"]) {
     switch (label) {
         case "OVERPRICED":
@@ -92,12 +122,17 @@ export default function Recommendations() {
                                 </p>
 
                                 <div className="d-flex gap-2 flex-wrap mt-3">
+
                                     <span className={`badge ${car.good_deal ? "bg-success" : "bg-secondary"}`}>
                                         {car.good_deal ? "Good Deal" : "Average Deal"}
                                     </span>
 
                                     <span className={`badge ${getAnomalyBadgeClass(car.anomaly_label)}`}>
                                         {getAnomalyText(car.anomaly_label)}
+                                    </span>
+
+                                    <span className={`badge ${getCarTypeBadge(car.car_type)}`}>
+                                        {getCarTypeText(car.car_type)}
                                     </span>
                                 </div>
                             </div>

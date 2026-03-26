@@ -26,4 +26,5 @@ export type RecommendationCar = {
     good_deal: boolean;
     anomaly_ratio: number;
     anomaly_label: "OVERPRICED" | "UNDERVALUED" | "FAIR" | "UNKNOWN";
+    car_type: string;
 };

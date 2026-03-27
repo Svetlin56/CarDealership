@@ -8,17 +8,8 @@ model = joblib.load("artifacts/car_price_pipeline.pkl")
 
 
 def get_anomaly_data(real_price, predicted_price):
-    if real_price is None:
-        return {
-            "anomaly_ratio": 0.0,
-            "anomaly_label": "UNKNOWN"
-        }
-
-    if predicted_price is None or predicted_price == 0:
-        return {
-            "anomaly_ratio": 0.0,
-            "anomaly_label": "UNKNOWN"
-        }
+    if real_price is None or predicted_price is None or predicted_price == 0:
+        return {"anomaly_ratio": 0.0, "anomaly_label": "UNKNOWN"}
 
     ratio = (float(real_price) - float(predicted_price)) / float(predicted_price)
 
@@ -35,47 +26,6 @@ def get_anomaly_data(real_price, predicted_price):
     }
 
 
-@app.route("/")
-def home():
-    return "ML Service is running"
-
-
-@app.route("/predict", methods=["POST"])
-def predict():
-    try:
-        data = request.get_json()
-        df = pd.DataFrame([data])
-
-        model_features = [
-            "Year",
-            "Engine_Size",
-            "Fuel_Type",
-            "Transmission",
-            "Mileage",
-            "Doors",
-            "Owner_Count",
-            "Brand",
-            "Model"
-        ]
-
-        df = df.reindex(columns=model_features, fill_value=0)
-
-        prediction = model.predict(df)[0]
-
-        real_price = data.get("price")
-        anomaly = get_anomaly_data(real_price, prediction)
-
-        return jsonify({
-            "predicted_price": round(float(prediction), 2),
-            "anomaly_ratio": anomaly["anomaly_ratio"],
-            "anomaly_label": anomaly["anomaly_label"]
-        })
-
-    except Exception as e:
-        print("PREDICT ERROR:", str(e))
-        return jsonify({"error": str(e)}), 400
-
-
 def calculate_score(row):
     score = 0
     score += (row["Year"] - 2000) * 0.5
@@ -84,64 +34,87 @@ def calculate_score(row):
     return score
 
 
+def classify_car(row):
+    model = str(row["Model"]).lower()
+    brand = str(row["Brand"]).lower()
+
+    if any(x in model for x in ["gtr", "m3", "m5", "amg", "rs", "mustang"]):
+        return "SPORT"
+
+    if brand in ["bmw", "audi", "mercedes"] and row["Year"] > 2016:
+        return "LUXURY"
+
+    if row["Doors"] >= 4:
+        return "FAMILY"
+
+    return "CITY"
+
+
+def explain(row):
+    reasons = []
+
+    if row["Mileage"] < 60000:
+        reasons.append("Low mileage")
+
+    if row["Year"] > 2018:
+        reasons.append("Newer car")
+
+    if row["predicted_price"] > row["price"]:
+        reasons.append("Good price vs market")
+
+    return ", ".join(reasons)
+
+
 @app.route("/recommend", methods=["POST"])
 def recommend():
     try:
         data = request.get_json()
-        print("RAW DATA:", data)
-
         df = pd.DataFrame(data)
 
         model_features = [
-            "Year",
-            "Engine_Size",
-            "Fuel_Type",
-            "Transmission",
-            "Mileage",
-            "Doors",
-            "Owner_Count",
-            "Brand",
-            "Model"
+            "Year", "Engine_Size", "Fuel_Type", "Transmission",
+            "Mileage", "Doors", "Owner_Count", "Brand", "Model"
         ]
 
         for col in model_features:
             if col not in df.columns:
                 df[col] = 0
 
+        df["Brand"] = df["Brand"].astype(str).str.upper()
+        df["Model"] = df["Model"].astype(str).str.upper()
+        df["Fuel_Type"] = df["Fuel_Type"].astype(str).str.upper()
+        df["Transmission"] = df["Transmission"].astype(str).str.upper()
+
         df_model = df[model_features].fillna(0)
 
-        print("DF MODEL:", df_model.columns.tolist())
-
-        df["predicted_price"] = model.predict(df_model)
-        df["predicted_price"] = df["predicted_price"].round(2)
+        df["predicted_price"] = model.predict(df_model).round(2)
 
         df["score"] = df.apply(calculate_score, axis=1)
 
-        if "price" in df.columns:
-            df["good_deal"] = df["predicted_price"] > df["price"]
-        else:
-            df["good_deal"] = False
+        df["value_score"] = (
+                (df["predicted_price"] - df["price"]) * 0.7 +
+                df["score"] * 0.3
+        )
 
-        df["value_score"] = df["score"] + (df["predicted_price"] / 10000)
+        anomaly = df.apply(
+            lambda r: pd.Series(get_anomaly_data(r["price"], r["predicted_price"])),
+            axis=1
+        )
 
-        if "price" in df.columns:
-            anomaly_results = df.apply(
-                lambda row: pd.Series(
-                    get_anomaly_data(row["price"], row["predicted_price"])
-                ),
-                axis=1
-            )
+        df["anomaly_ratio"] = anomaly["anomaly_ratio"]
+        df["anomaly_label"] = anomaly["anomaly_label"]
 
-            df["anomaly_ratio"] = anomaly_results["anomaly_ratio"]
-            df["anomaly_label"] = anomaly_results["anomaly_label"]
-        else:
-            df["anomaly_ratio"] = 0.0
-            df["anomaly_label"] = "UNKNOWN"
+        df["good_deal"] = df["predicted_price"] > df["price"]
+
+        df["confidence"] = (1 - abs(df["anomaly_ratio"])).round(2)
+
+        df["car_type"] = df.apply(classify_car, axis=1)
+
+        df["explanation"] = df.apply(explain, axis=1)
 
         df = df.sort_values(by="value_score", ascending=False)
 
-        result = df.head(5).to_dict(orient="records")
-
+        result = df.to_dict(orient="records")
 
         for r in result:
             for k, v in r.items():
@@ -153,9 +126,9 @@ def recommend():
         return jsonify(result)
 
     except Exception as e:
-        print("RECOMMEND ERROR:", str(e))
+        print("ERROR:", str(e))
         return jsonify({"error": str(e)}), 400
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=True, port=5000)

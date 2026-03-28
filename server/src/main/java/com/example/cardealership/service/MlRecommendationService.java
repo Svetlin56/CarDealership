@@ -2,10 +2,11 @@ package com.example.cardealership.service;
 
 import com.example.cardealership.domain.Car;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
+import java.math.BigDecimal;
 import java.util.*;
 
 @Service
@@ -14,7 +15,8 @@ public class MlRecommendationService {
 
     private final RestTemplate restTemplate;
 
-    private static final String ML_RECOMMEND_URL = "http://localhost:5000/recommend";
+    @Value("${ml.service.base-url:http://localhost:5000}")
+    private String mlServiceBaseUrl;
 
     public List<Map<String, Object>> recommend(List<Car> cars) {
         try {
@@ -32,25 +34,24 @@ public class MlRecommendationService {
             HttpEntity<List<Map<String, Object>>> requestEntity =
                     new HttpEntity<>(payload, headers);
 
-            ResponseEntity<Object[]> response =
-                    restTemplate.exchange(
-                            ML_RECOMMEND_URL,
-                            HttpMethod.POST,
-                            requestEntity,
-                            Object[].class
-                    );
+            ResponseEntity<Object[]> response = restTemplate.exchange(
+                    mlServiceBaseUrl + "/recommend",
+                    HttpMethod.POST,
+                    requestEntity,
+                    Object[].class
+            );
 
             Object[] body = response.getBody();
-
             if (body == null) {
                 return Collections.emptyList();
             }
 
             List<Map<String, Object>> result = new ArrayList<>();
-
             for (Object obj : body) {
                 if (obj instanceof Map<?, ?> map) {
-                    result.add((Map<String, Object>) map);
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> casted = (Map<String, Object>) map;
+                    result.add(casted);
                 }
             }
 
@@ -61,48 +62,8 @@ public class MlRecommendationService {
             return result;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("ML service failed", e);
+            throw new RuntimeException("ML recommendation service failed", e);
         }
-    }
-
-    private Map<String, Object> mapCar(Car car) {
-        Map<String, Object> m = new HashMap<>();
-
-        m.put("Year", safeInt(car.getProdYear(), 2015));
-        m.put("Mileage", safeLong(car.getMileage(), 100000L));
-
-        m.put("price", car.getPrice() != null ? car.getPrice().doubleValue() : 10000.0);
-
-        m.put("Engine_Size", 2.0);
-
-        m.put("Fuel_Type", normalize(car.getMake())); // ако нямаш fuelType поле
-        m.put("Transmission", "Manual");
-        m.put("Doors", 4);
-        m.put("Owner_Count", 1);
-
-        m.put("Brand", normalize(car.getMake()));
-        m.put("Model", normalize(car.getModel()));
-
-        return m;
-    }
-
-    private double getDouble(Object value) {
-        if (value == null) return 0.0;
-        return ((Number) value).doubleValue();
-    }
-
-    private String normalize(String value) {
-        if (value == null || value.isBlank()) return "UNKNOWN";
-        return value.trim();
-    }
-
-    private Integer safeInt(Integer value, int fallback) {
-        return value != null ? value : fallback;
-    }
-
-    private Long safeLong(Long value, long fallback) {
-        return value != null ? value : fallback;
     }
 
     public Double predict(Car car) {
@@ -115,16 +76,14 @@ public class MlRecommendationService {
             HttpEntity<Map<String, Object>> request =
                     new HttpEntity<>(payload, headers);
 
-            ResponseEntity<Map> response =
-                    restTemplate.exchange(
-                            "http://localhost:5000/predict",
-                            HttpMethod.POST,
-                            request,
-                            Map.class
-                    );
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    mlServiceBaseUrl + "/predict",
+                    HttpMethod.POST,
+                    request,
+                    Map.class
+            );
 
             Map<String, Object> body = response.getBody();
-
             if (body == null || body.get("predicted_price") == null) {
                 return null;
             }
@@ -132,8 +91,60 @@ public class MlRecommendationService {
             return Double.parseDouble(body.get("predicted_price").toString());
 
         } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            throw new RuntimeException("ML price prediction failed", e);
         }
+    }
+
+    private Map<String, Object> mapCar(Car car) {
+        Map<String, Object> m = new HashMap<>();
+
+        m.put("Brand", normalize(car.getMake()));
+        m.put("Model", normalize(car.getModel()));
+        m.put("Year", safeInt(car.getProdYear(), 2018));
+        m.put("Engine_Size", safeDecimal(car.getEngineSize(), BigDecimal.valueOf(2.0)));
+        m.put("Fuel_Type", normalizeCategory(car.getFuelType(), "Petrol"));
+        m.put("Transmission", normalizeCategory(car.getTransmission(), "Automatic"));
+        m.put("Mileage", safeLong(car.getMileage(), 100_000L));
+        m.put("Doors", safeInt(car.getDoors(), 4));
+        m.put("Owner_Count", safeInt(car.getOwnerCount(), 1));
+        m.put("price", car.getPrice() != null ? car.getPrice().doubleValue() : 0.0);
+
+        return m;
+    }
+
+    private String normalize(String value) {
+        if (value == null || value.isBlank()) {
+            return "UNKNOWN";
+        }
+        return value.trim();
+    }
+
+    private String normalizeCategory(String value, String fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        return value.trim();
+    }
+
+    private Integer safeInt(Integer value, int fallback) {
+        return value != null ? value : fallback;
+    }
+
+    private Long safeLong(Long value, long fallback) {
+        return value != null ? value : fallback;
+    }
+
+    private Double safeDecimal(BigDecimal value, BigDecimal fallback) {
+        return value != null ? value.doubleValue() : fallback.doubleValue();
+    }
+
+    private double getDouble(Object value) {
+        if (value == null) {
+            return 0.0;
+        }
+        if (value instanceof Number number) {
+            return number.doubleValue();
+        }
+        return Double.parseDouble(value.toString());
     }
 }

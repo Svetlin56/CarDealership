@@ -1,9 +1,8 @@
 package com.example.cardealership.dto;
 
-import java.math.BigDecimal;
-
 import jakarta.validation.constraints.*;
 import lombok.*;
+import java.math.BigDecimal;
 
 public class CarDtos {
 
@@ -33,10 +32,25 @@ public class CarDtos {
         )
         private String vin;
 
-        @Min(value = 0, message = "Price cannot be negative")
+        @NotNull(message = "Price is required")
+        @DecimalMin(value = "0.0", inclusive = true, message = "Price cannot be negative")
         private BigDecimal price;
 
         private String imageUrl;
+        
+        @DecimalMin(value = "0.1", inclusive = true, message = "Engine size must be positive")
+        private BigDecimal engineSize;
+
+        private String fuelType;
+
+        private String transmission;
+
+        @Min(value = 2, message = "Doors must be at least 2")
+        @Max(value = 6, message = "Doors must be at most 6")
+        private Integer doors;
+
+        @Min(value = 0, message = "Owner count cannot be negative")
+        private Integer ownerCount;
     }
 
     @Getter
@@ -52,5 +66,11 @@ public class CarDtos {
         private String vin;
         private BigDecimal price;
         private String imageUrl;
+
+        private BigDecimal engineSize;
+        private String fuelType;
+        private String transmission;
+        private Integer doors;
+        private Integer ownerCount;
     }
 }

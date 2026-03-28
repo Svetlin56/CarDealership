@@ -8,7 +8,6 @@ import com.example.cardealership.web.error.DuplicateVinException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 
 @Service
@@ -19,7 +18,6 @@ public class CarService {
     private final ListingRepository listingRepository;
 
     public Car create(CarDtos.CreateCarRequest req) {
-
         if (req.getVin() != null && !req.getVin().isBlank()) {
             if (carRepository.existsByVin(req.getVin())) {
                 throw new DuplicateVinException(req.getVin());
@@ -34,6 +32,11 @@ public class CarService {
                 .vin(req.getVin())
                 .price(req.getPrice())
                 .imageUrl(req.getImageUrl())
+                .engineSize(req.getEngineSize())
+                .fuelType(req.getFuelType())
+                .transmission(req.getTransmission())
+                .doors(req.getDoors())
+                .ownerCount(req.getOwnerCount())
                 .build();
 
         return carRepository.save(car);

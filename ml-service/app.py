@@ -6,9 +6,19 @@ import numpy as np
 app = Flask(__name__)
 model = joblib.load("artifacts/car_price_pipeline.pkl")
 
+MODEL_FEATURES = [
+    "Year",
+    "Engine_Size",
+    "Fuel_Type",
+    "Transmission",
+    "Mileage",
+    "Doors",
+    "Owner_Count",
+]
+
 
 def get_anomaly_data(real_price, predicted_price):
-    if real_price is None or predicted_price is None or predicted_price == 0:
+    if real_price is None or predicted_price is None or float(predicted_price) == 0:
         return {"anomaly_ratio": 0.0, "anomaly_label": "UNKNOWN"}
 
     ratio = (float(real_price) - float(predicted_price)) / float(predicted_price)
@@ -35,10 +45,10 @@ def calculate_score(row):
 
 
 def classify_car(row):
-    model = str(row["Model"]).lower()
-    brand = str(row["Brand"]).lower()
+    model_name = str(row.get("Model", "")).lower()
+    brand = str(row.get("Brand", "")).lower()
 
-    if any(x in model for x in ["gtr", "m3", "m5", "amg", "rs", "mustang"]):
+    if any(x in model_name for x in ["gtr", "m3", "m5", "amg", "rs", "mustang"]):
         return "SPORT"
 
     if brand in ["bmw", "audi", "mercedes"] and row["Year"] > 2016:
@@ -62,33 +72,89 @@ def explain(row):
     if row["predicted_price"] > row["price"]:
         reasons.append("Good price vs market")
 
+    if not reasons:
+        reasons.append("Balanced overall characteristics")
+
     return ", ".join(reasons)
+
+
+def sanitize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    if "Brand" not in df.columns:
+        df["Brand"] = "UNKNOWN"
+    if "Model" not in df.columns:
+        df["Model"] = "UNKNOWN"
+    if "price" not in df.columns:
+        df["price"] = 0.0
+
+    defaults = {
+        "Year": 2018,
+        "Engine_Size": 2.0,
+        "Fuel_Type": "Petrol",
+        "Transmission": "Automatic",
+        "Mileage": 100000,
+        "Doors": 4,
+        "Owner_Count": 1,
+    }
+
+    for col, default_value in defaults.items():
+        if col not in df.columns:
+            df[col] = default_value
+
+    df["Brand"] = df["Brand"].astype(str).str.strip().str.upper()
+    df["Model"] = df["Model"].astype(str).str.strip().str.upper()
+    df["Fuel_Type"] = df["Fuel_Type"].astype(str).str.strip().str.title()
+    df["Transmission"] = df["Transmission"].astype(str).str.strip().str.title()
+
+    numeric_cols = ["Year", "Engine_Size", "Mileage", "Doors", "Owner_Count", "price"]
+    for col in numeric_cols:
+        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(defaults.get(col, 0))
+
+    return df
+
+
+def to_native_types(records):
+    for record in records:
+        for key, value in record.items():
+            if isinstance(value, (np.float32, np.float64)):
+                record[key] = float(value)
+            elif isinstance(value, (np.int32, np.int64)):
+                record[key] = int(value)
+    return records
+
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    try:
+        data = request.get_json()
+
+        if not isinstance(data, dict):
+            return jsonify({"error": "Expected a single JSON object"}), 400
+
+        df = pd.DataFrame([data])
+        df = sanitize_dataframe(df)
+
+        predicted_price = model.predict(df[MODEL_FEATURES])[0]
+
+        return jsonify({
+            "predicted_price": round(float(predicted_price), 2)
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @app.route("/recommend", methods=["POST"])
 def recommend():
     try:
         data = request.get_json()
+
+        if not isinstance(data, list):
+            return jsonify({"error": "Expected a JSON array"}), 400
+
         df = pd.DataFrame(data)
+        df = sanitize_dataframe(df)
 
-        model_features = [
-            "Year", "Engine_Size", "Fuel_Type", "Transmission",
-            "Mileage", "Doors", "Owner_Count", "Brand", "Model"
-        ]
-
-        for col in model_features:
-            if col not in df.columns:
-                df[col] = 0
-
-        df["Brand"] = df["Brand"].astype(str).str.upper()
-        df["Model"] = df["Model"].astype(str).str.upper()
-        df["Fuel_Type"] = df["Fuel_Type"].astype(str).str.upper()
-        df["Transmission"] = df["Transmission"].astype(str).str.upper()
-
-        df_model = df[model_features].fillna(0)
-
-        df["predicted_price"] = model.predict(df_model).round(2)
-
+        df["predicted_price"] = model.predict(df[MODEL_FEATURES]).round(2)
         df["score"] = df.apply(calculate_score, axis=1)
 
         df["value_score"] = (
@@ -103,31 +169,25 @@ def recommend():
 
         df["anomaly_ratio"] = anomaly["anomaly_ratio"]
         df["anomaly_label"] = anomaly["anomaly_label"]
-
         df["good_deal"] = df["predicted_price"] > df["price"]
-
-        df["confidence"] = (1 - abs(df["anomaly_ratio"])).round(2)
-
+        df["confidence"] = (1 - abs(df["anomaly_ratio"])).clip(lower=0, upper=1).round(2)
         df["car_type"] = df.apply(classify_car, axis=1)
-
         df["explanation"] = df.apply(explain, axis=1)
 
         df = df.sort_values(by="value_score", ascending=False)
 
         result = df.to_dict(orient="records")
-
-        for r in result:
-            for k, v in r.items():
-                if isinstance(v, (np.float32, np.float64)):
-                    r[k] = float(v)
-                elif isinstance(v, (np.int32, np.int64)):
-                    r[k] = int(v)
+        result = to_native_types(result)
 
         return jsonify(result)
 
     except Exception as e:
-        print("ERROR:", str(e))
         return jsonify({"error": str(e)}), 400
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({"status": "UP"})
 
 
 if __name__ == "__main__":

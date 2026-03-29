@@ -51,3 +51,7 @@ cors:
 
 app:
   frontend-url: http://localhost:5173
+
+ml:
+  service:
+    base-url: ${ML_SERVICE_URL:http://localhost:5000}

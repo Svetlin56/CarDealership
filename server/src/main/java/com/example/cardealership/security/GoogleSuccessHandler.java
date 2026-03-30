@@ -1,7 +1,6 @@
 package com.example.cardealership.security;
 
 import com.example.cardealership.service.UserService;
-import com.example.cardealership.security.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +11,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Component
 @RequiredArgsConstructor
@@ -47,10 +48,15 @@ public class GoogleSuccessHandler implements AuthenticationSuccessHandler {
         String token = jwtService.generateToken(user.getEmail(), user.getRole().name());
 
         String redirectUrl = frontendUrl + "/oauth-success"
-                + "#token=" + token
-                + "&email=" + user.getEmail()
-                + "&picture=" + picture;
+                + "#token=" + encode(token)
+                + "&email=" + encode(user.getEmail())
+                + "&role=" + encode(user.getRole().name())
+                + "&picture=" + encode(picture == null ? "" : picture);
 
         response.sendRedirect(redirectUrl);
+    }
+
+    private String encode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 }

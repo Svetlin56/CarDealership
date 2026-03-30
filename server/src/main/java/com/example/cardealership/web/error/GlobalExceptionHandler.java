@@ -6,12 +6,10 @@ import org.springframework.http.*;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -78,6 +76,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleConflict(IllegalArgumentException ex) {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
+                .body(new ApiError(ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiError> handleIllegalState(IllegalStateException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
                 .body(new ApiError(ex.getMessage(), null));
     }
 

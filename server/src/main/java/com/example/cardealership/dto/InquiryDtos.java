@@ -9,21 +9,21 @@ public class InquiryDtos {
     @Setter
     public static class InquiryRequest {
 
-        @NotNull
-        private Long listingId;
-
-        @NotBlank
+        @NotBlank(message = "Name is required")
         private String name;
 
-        @Email
-        @NotBlank
+        @Email(message = "Email must be valid")
+        @NotBlank(message = "Email is required")
         private String email;
 
-        @Pattern(regexp="^[+0-9\\- ]{6,20}$")
-        @NotBlank
+        @Pattern(
+                regexp="^[+0-9\\- ]{6,20}$",
+                message = "Phone must contain only digits, spaces, + or -"
+        )
+        @NotBlank(message = "Phone is required")
         private String phone;
 
-        @Size(max = 2000)
+        @Size(max = 2000, message = "Message must be up to 2000 characters")
         private String message;
     }
 

@@ -64,103 +64,9 @@ img { object-fit: cover; }
 }
 
 /* From Uiverse.io by cssbuttons-io */
-.save-button {
-    padding: 1.3em 3em;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 2.5px;
-    font-weight: 500;
-    color: #000;
-    background-color: #ced4da;
-    border: none;
-    border-radius: 45px;
-    box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease 0s;
-    cursor: pointer;
-    outline: none;
-}
-
-.save-button:hover {
-    background-color: #23c483;
-    box-shadow: 0px 15px 20px rgba(46, 229, 157, 0.4);
-    color: #fff;
-    transform: translateY(-7px);
-}
-
-.save-button:active {
-    transform: translateY(-1px);
-}
-
-.table-responsive {
-    border: 1mm ridge #74c0fc;
-}
-
-{/* From Uiverse.io by cssbuttons-io */}
-.btn-success {
-    padding: 1.3em 3em;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 2.5px;
-    font-weight: 500;
-    color: #000;
-    background-color: #ced4da;
-    border: none;
-    border-radius: 45px;
-    box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease 0s;
-    cursor: pointer;
-    outline: none;
-}
-
-.btn-success:hover {
-    background-color: #23c483;
-    box-shadow: 0px 15px 20px rgba(46, 229, 157, 0.4);
-    color: #fff;
-    transform: translateY(-7px);
-}
-
-.btn-success:active {
-    transform: translateY(-1px);
-}
-.btn-wrapper {
-    display: flex;
-    justify-content: center;
-}
-
-
-{/* From Uiverse.io by cssbuttons-io */}
-.login-button {
-    padding: 1.3em 3em;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 2.5px;
-    font-weight: 500;
-    color: #000;
-    background-color: #ced4da;
-    border: none;
-    border-radius: 45px;
-    box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease 0s;
-    cursor: pointer;
-    outline: none;
-}
-
-.login-button:hover {
-    background-color: #23c483;
-    box-shadow: 0px 15px 20px rgba(46, 229, 157, 0.4);
-    color: #fff;
-    transform: translateY(-7px);
-}
-
-.login-button:active {
-    transform: translateY(-1px);
-}
-.login-wrapper {
-    display: flex;
-    justify-content: center;
-}
-
-{/* From Uiverse.io by cssbuttons-io */}
+.save-button,
+.btn-success,
+.login-button,
 .google-button {
     padding: 1.3em 3em;
     font-size: 12px;
@@ -175,12 +81,11 @@ img { object-fit: cover; }
     transition: all 0.3s ease 0s;
     cursor: pointer;
     outline: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
 }
 
+.save-button:hover,
+.btn-success:hover,
+.login-button:hover,
 .google-button:hover {
     background-color: #23c483;
     box-shadow: 0px 15px 20px rgba(46, 229, 157, 0.4);
@@ -188,8 +93,28 @@ img { object-fit: cover; }
     transform: translateY(-7px);
 }
 
+.save-button:active,
+.btn-success:active,
+.login-button:active,
 .google-button:active {
     transform: translateY(-1px);
+}
+
+.btn-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+.login-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+.google-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
 .buttonGoogle-wrapper {
@@ -201,3 +126,6 @@ img { object-fit: cover; }
     opacity: 0.9;
 }
 
+.table-responsive {
+    border: 1mm ridge #74c0fc;
+}

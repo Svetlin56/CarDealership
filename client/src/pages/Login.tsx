@@ -1,5 +1,5 @@
 import { useState } from "react";
-import http from "../api/http";
+import http, { API_BASE_URL } from "../api/http";
 import FormField from "../components/FormField";
 import { useNavigate } from "react-router-dom";
 
@@ -8,13 +8,15 @@ export default function Login() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const navigate = useNavigate();
 
-    const onChange = (e: any) => {
+    const onChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    ) => {
         setForm({ ...form, [e.target.name]: e.target.value });
 
         setErrors(prev => ({ ...prev, [e.target.name]: "" }));
     };
 
-    const onSubmit = async (e: any) => {
+    const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         const newErrors: Record<string, string> = {};
@@ -44,13 +46,18 @@ export default function Login() {
                 navigate("/cars");
             }
 
-        } catch (err) {
+        } catch (err: any) {
+            if (err.response?.status === 400 && err.response?.data?.fieldErrors) {
+                setErrors(err.response.data.fieldErrors);
+                return;
+            }
+
             alert("Wrong email or password!");
         }
     };
 
     const googleLogin = () => {
-        window.location.href = "http://localhost:8080/oauth2/authorization/google";
+        window.location.href = `${API_BASE_URL}/oauth2/authorization/google`;
     };
 
     return (
@@ -64,7 +71,7 @@ export default function Login() {
                     name="email"
                     value={form.email}
                     onChange={onChange}
-                    required
+                    required={true}
                     error={errors.email}
                 />
 
@@ -74,12 +81,12 @@ export default function Login() {
                     name="password"
                     value={form.password}
                     onChange={onChange}
-                    required
+                    required={true}
                     error={errors.password}
                 />
                 {/* From Uiverse.io by cssbuttons-io */}
                 <div className="login-wrapper">
-                    <button className="login-button">
+                    <button type="submit" className="login-button">
                         Login
                     </button>
                 </div>
@@ -88,7 +95,6 @@ export default function Login() {
             <div className="text-center my-3">
                 <span>or</span>
             </div>
-
 
             {/* From Uiverse.io by cssbuttons-io */}
             <div className="buttonGoogle-wrapper">

@@ -10,14 +10,22 @@ export default function OAuthSuccess() {
         const token = params.get("token");
         const email = params.get("email");
         const picture = params.get("picture");
+        const role = params.get("role");
 
         if (token) {
             localStorage.setItem("token", token);
-            localStorage.setItem("user", JSON.stringify({ email, picture }));
+            localStorage.setItem(
+                "user",
+                JSON.stringify({ email, picture, role })
+            );
         }
 
-        navigate("/");
-    }, []);
+        if (role === "ADMIN") {
+            navigate("/dashboard");
+        } else {
+            navigate("/cars");
+        }
+    }, [navigate]);
 
     return <p>Signing in...</p>;
 }

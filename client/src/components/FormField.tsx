@@ -73,7 +73,7 @@ export default function FormField({
         );
     }
 
-    const Cmp: any = as === "textarea" ? "textarea" : "input";
+    const Cmp: React.ElementType = as === "textarea" ? "textarea" : "input";
 
     return (
         <div className="mb-3">
@@ -83,12 +83,13 @@ export default function FormField({
                 className={`form-control ${error ? "is-invalid" : ""}`}
                 type={as === "input" ? type : undefined}
                 name={name}
-                value={value as any}
+                value={value ?? ""}
                 onChange={onChange}
                 required={required}
                 pattern={pattern}
                 placeholder={placeholder}
                 min={type === "number" ? min : undefined}
+                maxLength={maxLength}
             />
 
             {error && (

@@ -8,6 +8,7 @@ import com.example.cardealership.web.error.DuplicateVinException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
@@ -17,11 +18,9 @@ public class CarService {
     private final CarRepository carRepository;
     private final ListingRepository listingRepository;
 
-    public Car create(CarDtos.CreateCarRequest req) {
-        if (req.getVin() != null && !req.getVin().isBlank()) {
-            if (carRepository.existsByVin(req.getVin())) {
-                throw new DuplicateVinException(req.getVin());
-            }
+    public CarDtos.CarResponse create(CarDtos.CreateCarRequest req) {
+        if (req.getVin() != null && !req.getVin().isBlank() && carRepository.existsByVin(req.getVin())) {
+            throw new DuplicateVinException(req.getVin());
         }
 
         Car car = Car.builder()
@@ -39,15 +38,18 @@ public class CarService {
                 .ownerCount(req.getOwnerCount())
                 .build();
 
-        return carRepository.save(car);
+        Car savedCar = carRepository.save(car);
+
+        return CarDtos.CarResponse.from(savedCar);
     }
 
-    public List<Car> findAll() {
-        return carRepository.findAll();
+    public List<CarDtos.CarResponse> findAll() {
+        return CarDtos.CarResponse.fromList(carRepository.findAll());
     }
 
-    public Car findById(Long id) {
-        return carRepository.findById(id).orElseThrow();
+    public CarDtos.CarResponse findById(Long id) {
+        Car car = carRepository.findById(id).orElseThrow();
+        return CarDtos.CarResponse.from(car);
     }
 
     @Transactional

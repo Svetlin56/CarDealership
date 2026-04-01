@@ -1,21 +1,25 @@
 package com.example.cardealership.service;
 
-import com.example.cardealership.domain.*;
+import com.example.cardealership.domain.Car;
+import com.example.cardealership.domain.Listing;
+import com.example.cardealership.domain.User;
 import com.example.cardealership.dto.ListingDtos;
-import com.example.cardealership.repository.*;
+import com.example.cardealership.repository.CarRepository;
+import com.example.cardealership.repository.ListingRepository;
+import com.example.cardealership.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 
-@Service @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class ListingService {
+
     private final ListingRepository listingRepo;
     private final CarRepository carRepo;
     private final UserRepository userRepo;
 
-    public Listing createByEmail(String email, ListingDtos.CreateListingRequest req) {
-
+    public ListingDtos.ListingResponse createByEmail(String email, ListingDtos.CreateListingRequest req) {
         User seller = userRepo.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
@@ -29,21 +33,31 @@ public class ListingService {
                 .status(Listing.Status.ACTIVE)
                 .build();
 
-        return listingRepo.save(listing);
+        Listing savedListing = listingRepo.save(listing);
+
+        return ListingDtos.ListingResponse.from(savedListing);
     }
 
-    public List<Listing> all(){ return listingRepo.findAll(); }
-    public Listing get(Long id){ return listingRepo.findById(id).orElseThrow(); }
+    public List<ListingDtos.ListingResponse> all() {
+        return ListingDtos.ListingResponse.fromList(listingRepo.findAll());
+    }
 
-    public Listing updateStatus(Long id, ListingDtos.UpdateListingStatusRequest req) {
-        Listing l = get(id);
+    public ListingDtos.ListingResponse get(Long id) {
+        Listing listing = listingRepo.findById(id).orElseThrow();
+        return ListingDtos.ListingResponse.from(listing);
+    }
+
+    public ListingDtos.ListingResponse updateStatus(Long id, ListingDtos.UpdateListingStatusRequest req) {
+        Listing listing = listingRepo.findById(id).orElseThrow();
 
         try {
-            l.setStatus(Listing.Status.valueOf(req.getStatus().toUpperCase()));
+            listing.setStatus(Listing.Status.valueOf(req.getStatus().toUpperCase()));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid status value");
         }
 
-        return listingRepo.save(l);
+        Listing updatedListing = listingRepo.save(listing);
+
+        return ListingDtos.ListingResponse.from(updatedListing);
     }
 }

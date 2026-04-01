@@ -1,8 +1,10 @@
 package com.example.cardealership.dto;
 
+import com.example.cardealership.domain.Car;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import java.math.BigDecimal;
+import java.util.List;
 
 public class CarDtos {
 
@@ -37,7 +39,7 @@ public class CarDtos {
         private BigDecimal price;
 
         private String imageUrl;
-        
+
         @DecimalMin(value = "0.1", inclusive = true, message = "Engine size must be positive")
         private BigDecimal engineSize;
 
@@ -55,7 +57,9 @@ public class CarDtos {
 
     @Getter
     @Setter
+    @NoArgsConstructor
     @AllArgsConstructor
+    @Builder
     public static class CarResponse {
 
         private Long id;
@@ -66,11 +70,34 @@ public class CarDtos {
         private String vin;
         private BigDecimal price;
         private String imageUrl;
-
         private BigDecimal engineSize;
         private String fuelType;
         private String transmission;
         private Integer doors;
         private Integer ownerCount;
+
+        public static CarResponse from(Car car) {
+            return CarResponse.builder()
+                    .id(car.getId())
+                    .make(car.getMake())
+                    .model(car.getModel())
+                    .year(car.getProdYear())
+                    .mileage(car.getMileage())
+                    .vin(car.getVin())
+                    .price(car.getPrice())
+                    .imageUrl(car.getImageUrl())
+                    .engineSize(car.getEngineSize())
+                    .fuelType(car.getFuelType())
+                    .transmission(car.getTransmission())
+                    .doors(car.getDoors())
+                    .ownerCount(car.getOwnerCount())
+                    .build();
+        }
+
+        public static List<CarResponse> fromList(List<Car> cars) {
+            return cars.stream()
+                    .map(CarResponse::from)
+                    .toList();
+        }
     }
 }

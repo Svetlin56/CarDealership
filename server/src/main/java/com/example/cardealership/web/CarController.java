@@ -1,6 +1,5 @@
 package com.example.cardealership.web;
 
-import com.example.cardealership.domain.Car;
 import com.example.cardealership.dto.CarDtos;
 import com.example.cardealership.service.CarService;
 import jakarta.validation.Valid;
@@ -19,28 +18,24 @@ public class CarController {
     private final CarService service;
 
     @GetMapping
-    public List<Car> all() {
+    public List<CarDtos.CarResponse> all() {
         return service.findAll();
     }
 
     @GetMapping("/{id}")
-    public Car get(@PathVariable("id") Long id) {
+    public CarDtos.CarResponse get(@PathVariable("id") Long id) {
         return service.findById(id);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<Car> create(@Valid @RequestBody CarDtos.CreateCarRequest req) {
+    public ResponseEntity<CarDtos.CarResponse> create(@Valid @RequestBody CarDtos.CreateCarRequest req) {
         return ResponseEntity.ok(service.create(req));
     }
-
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
-
-
-
 }

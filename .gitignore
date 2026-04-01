@@ -1,5 +1,7 @@
 server/target/
 
+server/node_modules/
+
 client/node_modules/
 
 ml-service/venv

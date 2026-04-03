@@ -1,5 +1,5 @@
 import { useState } from "react";
-import http, { API_BASE_URL } from "../api/http";
+import http, { API_BASE_URL, setAuthToken } from "../api/http";
 import FormField from "../components/FormField";
 import { useNavigate } from "react-router-dom";
 
@@ -39,6 +39,8 @@ export default function Login() {
 
             localStorage.setItem("token", res.data.token);
             localStorage.setItem("user", JSON.stringify(res.data));
+
+            setAuthToken(res.data.token);
 
             if (res.data.role === "ADMIN") {
                 navigate("/dashboard");

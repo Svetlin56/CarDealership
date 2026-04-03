@@ -1,4 +1,5 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import { setAuthToken, API_BASE_URL } from "../api/http";
 
 export default function NavBar() {
     const navigate = useNavigate();
@@ -7,9 +8,19 @@ export default function NavBar() {
     const rawUser = localStorage.getItem("user");
     const user = rawUser ? JSON.parse(rawUser) : null;
 
-    const logout = () => {
+    const logout = async () => {
+        try {
+            await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
+                method: "POST",
+                credentials: "include",
+            });
+        } catch (err) {
+            console.error(err);
+        }
+
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        setAuthToken(null);
         navigate("/");
     };
 

@@ -4,6 +4,8 @@ import com.example.cardealership.domain.User;
 import com.example.cardealership.dto.AuthDtos.*;
 import com.example.cardealership.security.JwtService;
 import com.example.cardealership.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -34,5 +36,15 @@ public class AuthController {
         User u = userService.findByEmail(req.getEmail());
         String token = jwtService.generateToken(u.getEmail(), u.getRole().name());
         return ResponseEntity.ok(new AuthResponse(token, u.getEmail(), u.getRole().name(), null));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+
+        return ResponseEntity.ok().build();
     }
 }

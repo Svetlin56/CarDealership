@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { setAuthToken } from "../api/http";
 
 export default function OAuthSuccess() {
     const navigate = useNavigate();
@@ -18,6 +19,8 @@ export default function OAuthSuccess() {
                 "user",
                 JSON.stringify({ email, picture, role })
             );
+
+            setAuthToken(token);
         }
 
         if (role === "ADMIN") {

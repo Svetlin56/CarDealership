@@ -1,11 +1,11 @@
 package com.example.cardealership.service;
 
+import com.example.cardealership.domain.Role;
 import com.example.cardealership.domain.User;
 import com.example.cardealership.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.example.cardealership.domain.Role;
 
 @Service
 @RequiredArgsConstructor
@@ -34,8 +34,15 @@ public class UserService {
     }
 
     public User findOrCreateGoogleUser(String email) {
-
         return repo.findByEmail(email)
+                .map(existingUser -> {
+                    if (existingUser.getRole() != Role.USER) {
+                        existingUser.setRole(Role.USER);
+                        return repo.save(existingUser);
+                    }
+
+                    return existingUser;
+                })
                 .orElseGet(() -> {
 
                     User user = User.builder()

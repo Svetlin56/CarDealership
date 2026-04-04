@@ -20,9 +20,10 @@ export default function CarDetails() {
             </div>
             <div className="col-md-5">
                 <h2>{car.make} {car.model}</h2>
-                <p>Year: {car.prodYear}</p>
+                <p>Year: {car.year}</p>
                 <p>Mileage: {car.mileage?.toLocaleString()} km</p>
-                <p>VIN: {car.vin}</p>
+                <p>Transmission: {car.transmission}</p>
+                <p>Engine size: {car.engineSize} L</p>
                 <h4 className="text-success">{car.price.toLocaleString()} €</h4>
             </div>
         </div>

@@ -2,11 +2,15 @@ export type Car = {
     id?: number;
     make: string;
     model: string;
-    prodYear: number;
+    year: number;
     mileage?: number;
-    vin?: string;
     price: number;
     imageUrl?: string;
+    engineSize?: number;
+    fuelType?: string;
+    transmission?: string;
+    doors?: number;
+    ownerCount?: number;
 }
 
 export type RecommendationCar = {

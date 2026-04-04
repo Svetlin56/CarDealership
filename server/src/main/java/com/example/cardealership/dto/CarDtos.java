@@ -67,7 +67,6 @@ public class CarDtos {
         private String model;
         private Integer year;
         private Long mileage;
-        private String vin;
         private BigDecimal price;
         private String imageUrl;
         private BigDecimal engineSize;
@@ -83,7 +82,6 @@ public class CarDtos {
                     .model(car.getModel())
                     .year(car.getProdYear())
                     .mileage(car.getMileage())
-                    .vin(car.getVin())
                     .price(car.getPrice())
                     .imageUrl(car.getImageUrl())
                     .engineSize(car.getEngineSize())

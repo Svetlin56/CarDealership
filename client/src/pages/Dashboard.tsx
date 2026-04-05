@@ -14,7 +14,10 @@ export default function Dashboard() {
         mileage: 0,
         vin: "",
         price: 0,
-        imageUrl: ""
+        imageUrl: "",
+        transmission: "",
+        fuelType: "",
+        engineSize: ""
     });
 
     const brands: Record<string, string[]> = {
@@ -57,6 +60,21 @@ export default function Dashboard() {
         return { value: y, label: y.toString() };
     });
 
+    const transmissionOptions = [
+        { value: "Manual", label: "Manual" },
+        { value: "Automatic", label: "Automatic" },
+        { value: "Semi-automatic", label: "Semi-automatic" },
+        { value: "CVT", label: "CVT" }
+    ];
+
+    const fuelTypeOptions = [
+        { value: "Petrol", label: "Petrol" },
+        { value: "Diesel", label: "Diesel" },
+        { value: "Hybrid", label: "Hybrid" },
+        { value: "Electric", label: "Electric" },
+        { value: "LPG", label: "LPG" }
+    ];
+
     const load = () =>
         http.get("/cars").then(r => setCars(r.data));
 
@@ -94,7 +112,8 @@ export default function Dashboard() {
                 ...form,
                 year: Number(form.year),
                 mileage: Number(form.mileage),
-                price: Number(form.price)
+                price: Number(form.price),
+                engineSize: form.engineSize ? Number(form.engineSize) : null
             });
 
             setForm({
@@ -104,7 +123,10 @@ export default function Dashboard() {
                 mileage: 0,
                 vin: "",
                 price: 10000,
-                imageUrl: ""
+                imageUrl: "",
+                transmission: "",
+                fuelType: "",
+                engineSize: ""
             });
 
             await load();
@@ -133,8 +155,7 @@ export default function Dashboard() {
         return (
             c.make.toLowerCase().includes(q) ||
             c.model.toLowerCase().includes(q) ||
-            c.prodYear?.toString().includes(q) ||
-            c.vin?.toLowerCase().includes(q)
+            c.year?.toString().includes(q)
         );
     });
 
@@ -204,12 +225,41 @@ export default function Dashboard() {
                     />
 
                     <FormField
+                        label="Transmission"
+                        name="transmission"
+                        value={form.transmission}
+                        onChange={onChange}
+                        as="select"
+                        options={transmissionOptions}
+                        placeholder="Select Transmission"
+                    />
+
+                    <FormField
+                        label="Fuel Type"
+                        name="fuelType"
+                        value={form.fuelType}
+                        onChange={onChange}
+                        as="select"
+                        options={fuelTypeOptions}
+                        placeholder="Select Fuel Type"
+                    />
+
+                    <FormField
+                        label="Engine Size"
+                        type="number"
+                        name="engineSize"
+                        value={form.engineSize}
+                        onChange={onChange}
+                        min={0.1}
+                        placeholder="e.g. 2.0"
+                    />
+
+                    <FormField
                         label="Image (URL)"
                         name="imageUrl"
                         value={form.imageUrl}
                         onChange={onChange}
                     />
-
 
                     {/* From Uiverse.io by cssbuttons-io */}
                     <button className="save-button">
@@ -245,7 +295,7 @@ export default function Dashboard() {
                             <tr key={c.id}>
                                 <td>{c.id}</td>
                                 <td>{c.make} {c.model}</td>
-                                <td>{c.prodYear}</td>
+                                <td>{c.year}</td>
                                 <td>{c.mileage?.toLocaleString()}</td>
                                 <td>{c.price.toLocaleString()} €</td>
 

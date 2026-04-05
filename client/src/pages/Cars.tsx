@@ -17,8 +17,7 @@ export default function Cars() {
         return (
             c.make.toLowerCase().includes(q) ||
             c.model.toLowerCase().includes(q) ||
-            c.prodYear?.toString().includes(q) ||
-            c.vin?.toLowerCase().includes(q)
+            c.year?.toString().includes(q)
         );
     });
 

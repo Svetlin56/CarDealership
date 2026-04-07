@@ -1,8 +1,8 @@
 INSERT INTO users (email, password_hash, role)
 VALUES (
-        'admin@cars.bg',
-        '$2a$10$IuRbh312/9jBjFZi1ktSDOdYD5fAmGHMvygRQq5T.sFSkjStKLN6i',
-        'ADMIN'
+           '${adminEmail}',
+           '${adminPasswordHash}',
+           'ADMIN'
        );
 
 INSERT INTO car (make, model, prod_year, mileage, vin, price, image_url) VALUES

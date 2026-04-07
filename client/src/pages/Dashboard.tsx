@@ -250,7 +250,7 @@ export default function Dashboard() {
                         name="engineSize"
                         value={form.engineSize}
                         onChange={onChange}
-                        min={0.1}
+                        min={0.9}
                         placeholder="e.g. 2.0"
                     />
 

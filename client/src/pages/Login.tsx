@@ -1,19 +1,31 @@
 import { useState } from "react";
-import http, { API_BASE_URL, setAuthToken } from "../api/http";
+import { useLocation, useNavigate } from "react-router-dom";
+import http, { API_BASE_URL } from "../api/http";
 import FormField from "../components/FormField";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import type { AuthResponse } from "../types/auth";
 
 export default function Login() {
     const [form, setForm] = useState({ email: "", password: "" });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const navigate = useNavigate();
+    const location = useLocation();
+    const { login } = useAuth();
+
+    const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname;
 
     const onChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
     ) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+        setForm(prev => ({
+            ...prev,
+            [e.target.name]: e.target.value
+        }));
 
-        setErrors(prev => ({ ...prev, [e.target.name]: "" }));
+        setErrors(prev => ({
+            ...prev,
+            [e.target.name]: ""
+        }));
     };
 
     const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -35,19 +47,16 @@ export default function Login() {
         }
 
         try {
-            const res = await http.post("/auth/login", form);
+            const res = await http.post<AuthResponse>("/auth/login", form);
 
-            localStorage.setItem("token", res.data.token);
-            localStorage.setItem("user", JSON.stringify(res.data));
+            login(res.data);
 
-            setAuthToken(res.data.token);
+            const targetPath =
+                res.data.role === "ADMIN"
+                    ? "/dashboard"
+                    : from || "/cars";
 
-            if (res.data.role === "ADMIN") {
-                navigate("/dashboard");
-            } else {
-                navigate("/cars");
-            }
-
+            navigate(targetPath, { replace: true });
         } catch (err: any) {
             if (err.response?.status === 400 && err.response?.data?.fieldErrors) {
                 setErrors(err.response.data.fieldErrors);
@@ -97,7 +106,6 @@ export default function Login() {
             <div className="text-center my-3">
                 <span>or</span>
             </div>
-
             {/* From Uiverse.io by cssbuttons-io */}
             <div className="buttonGoogle-wrapper">
                 <button

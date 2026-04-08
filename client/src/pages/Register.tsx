@@ -1,30 +1,50 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import http from "../api/http";
 import FormField from "../components/FormField";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import type { AuthResponse } from "../types/auth";
 
 export default function Register() {
     const [form, setForm] = useState({ email: "", password: "" });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const navigate = useNavigate();
+    const { login } = useAuth();
 
-    const onChange = (e: any) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+    const onChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    ) => {
+        setForm(prev => ({
+            ...prev,
+            [e.target.name]: e.target.value
+        }));
 
-        setErrors(prev => ({ ...prev, [e.target.name]: "" }));
+        setErrors(prev => ({
+            ...prev,
+            [e.target.name]: ""
+        }));
     };
 
-    const onSubmit = async (e: any) => {
+    const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setErrors({});
 
         try {
-            const res = await http.post("/auth/register", form);
-            localStorage.setItem("token", res.data.token);
-            navigate("/dashboard");
+            const res = await http.post<AuthResponse>("/auth/register", form);
+
+            login(res.data);
+
+            if (res.data.role === "ADMIN") {
+                navigate("/dashboard", { replace: true });
+            } else {
+                navigate("/cars", { replace: true });
+            }
         } catch (err: any) {
             if (err.response?.status === 400) {
-                const apiErrors = err.response.data.fieldErrors;
+                const apiErrors =
+                    err.response?.data?.fieldErrors ||
+                    err.response?.data?.errors;
+
                 if (apiErrors) {
                     setErrors(apiErrors);
                 }
@@ -59,7 +79,6 @@ export default function Register() {
                 required
                 error={errors.password}
             />
-
             {/* From Uiverse.io by cssbuttons-io */}
             <div className="btn-wrapper">
                 <button className="btn-success">

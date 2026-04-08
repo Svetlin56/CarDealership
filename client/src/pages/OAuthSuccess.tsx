@@ -1,9 +1,11 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { setAuthToken } from "../api/http";
+import { useAuth } from "../contexts/AuthContext";
+import type { AuthResponse } from "../types/auth";
 
 export default function OAuthSuccess() {
     const navigate = useNavigate();
+    const { completeOAuthLogin } = useAuth();
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.hash.substring(1));
@@ -13,22 +15,26 @@ export default function OAuthSuccess() {
         const picture = params.get("picture");
         const role = params.get("role");
 
-        if (token) {
-            localStorage.setItem("token", token);
-            localStorage.setItem(
-                "user",
-                JSON.stringify({ email, picture, role })
-            );
-
-            setAuthToken(token);
+        if (!token) {
+            navigate("/login", { replace: true });
+            return;
         }
+
+        const authData: AuthResponse = {
+            token,
+            email,
+            picture,
+            role
+        };
+
+        completeOAuthLogin(authData);
 
         if (role === "ADMIN") {
-            navigate("/dashboard");
+            navigate("/dashboard", { replace: true });
         } else {
-            navigate("/cars");
+            navigate("/cars", { replace: true });
         }
-    }, [navigate]);
+    }, [completeOAuthLogin, navigate]);
 
     return <p>Signing in...</p>;
 }

@@ -1,13 +1,27 @@
 import { useEffect, useState } from "react";
 import http from "../api/http";
 import FormField from "../components/FormField";
-import { Car } from "../types/models";
+import { Car, CarPageResponse } from "../types/models";
 import React from "react";
+
+type CreateCarForm = {
+    make: string;
+    model: string;
+    year: number;
+    mileage: number;
+    vin: string;
+    price: number;
+    imageUrl: string;
+    transmission: string;
+    fuelType: string;
+    engineSize: string;
+};
 
 export default function Dashboard() {
     const [cars, setCars] = useState<Car[]>([]);
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const [form, setForm] = useState<any>({
+    const [search, setSearch] = useState("");
+    const [form, setForm] = useState<CreateCarForm>({
         make: "",
         model: "",
         year: 2019,
@@ -21,9 +35,9 @@ export default function Dashboard() {
     });
 
     const brands: Record<string, string[]> = {
-        BMW: ["X1","X2","X3","X4","X5","X6","M3"],
-        Audi: ["A1","A2","A3","A4","A5","A6","Q7"],
-        Mercedes: ["A-Class","B-Class","C-Class","E-Class","S-Class","GLC"],
+        BMW: ["X1", "X2", "X3", "X4", "X5", "X6", "M3"],
+        Audi: ["A1", "A2", "A3", "A4", "A5", "A6", "Q7"],
+        Mercedes: ["A-Class", "B-Class", "C-Class", "E-Class", "S-Class", "GLC"],
         Peugeot: ["208", "2008", "308", "3008", "5008", "408", "Rifter"],
         Fiat: ["500", "500X", "Panda", "Tipo", "Doblo", "Ducato", "600"],
         VW: ["Polo", "Golf", "Passat", "Tiguan", "Touareg", "T-Roc", "ID.4"],
@@ -75,14 +89,35 @@ export default function Dashboard() {
         { value: "LPG", label: "LPG" }
     ];
 
-    const load = () =>
-        http.get("/cars").then(r => setCars(r.data));
+    const load = async () => {
+        const res = await http.get<CarPageResponse>("/cars", {
+            params: {
+                page: 0,
+                size: 100,
+                sortBy: "id",
+                sortDir: "desc",
+                search: search || undefined
+            }
+        });
+
+        setCars(res.data.content);
+    };
 
     useEffect(() => {
         load();
     }, []);
 
-    const onChange = (e: any) => {
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            load();
+        }, 250);
+
+        return () => clearTimeout(timeout);
+    }, [search]);
+
+    const onChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    ) => {
         const { name, value } = e.target;
 
         let newValue = value;
@@ -91,7 +126,7 @@ export default function Dashboard() {
             newValue = value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 17);
         }
 
-        setForm((prev: any) => ({
+        setForm(prev => ({
             ...prev,
             [name]: newValue,
             ...(name === "make" ? { model: "" } : {})
@@ -103,7 +138,7 @@ export default function Dashboard() {
         }));
     };
 
-    const addCar = async (e: any) => {
+    const addCar = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setErrors({});
 
@@ -131,15 +166,11 @@ export default function Dashboard() {
 
             await load();
         } catch (err: any) {
-
-            const apiErrors =
-                err.response?.data?.errors ||
-                err.response?.data?.fieldErrors;
+            const apiErrors = err.response?.data?.errors || err.response?.data?.fieldErrors;
 
             if (apiErrors) {
                 setErrors(apiErrors);
             }
-
         }
     };
 
@@ -148,23 +179,11 @@ export default function Dashboard() {
         await load();
     };
 
-    const [search, setSearch] = useState("");
-    const filteredCars = cars.filter(c => {
-        const q = search.toLowerCase();
-
-        return (
-            c.make.toLowerCase().includes(q) ||
-            c.model.toLowerCase().includes(q) ||
-            c.year?.toString().includes(q)
-        );
-    });
-
     return (
         <div className="row g-4">
             <div className="col-md-5">
                 <h4>Add cars</h4>
                 <form className="needs-validation" noValidate onSubmit={addCar}>
-
                     <FormField
                         label="Brand"
                         name="make"
@@ -260,11 +279,8 @@ export default function Dashboard() {
                         value={form.imageUrl}
                         onChange={onChange}
                     />
-
                     {/* From Uiverse.io by cssbuttons-io */}
-                    <button className="save-button">
-                        Save
-                    </button>
+                    <button className="save-button">Save</button>
                 </form>
             </div>
 
@@ -273,7 +289,7 @@ export default function Dashboard() {
                 <input
                     type="text"
                     className="form-control mb-3"
-                    placeholder="Search by brand, model, year or VIN..."
+                    placeholder="Search by brand, model or VIN..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                 />
@@ -291,10 +307,12 @@ export default function Dashboard() {
                         </tr>
                         </thead>
                         <tbody>
-                        {filteredCars.map(c => (
+                        {cars.map(c => (
                             <tr key={c.id}>
                                 <td>{c.id}</td>
-                                <td>{c.make} {c.model}</td>
+                                <td>
+                                    {c.make} {c.model}
+                                </td>
                                 <td>{c.year}</td>
                                 <td>{c.mileage?.toLocaleString()}</td>
                                 <td>{c.price.toLocaleString()} €</td>
@@ -314,9 +332,9 @@ export default function Dashboard() {
                                                 ></path>
                                             </g>
                                             <defs>
-                                                <g clipPath="url(#clip0_35_22)">
+                                                <clipPath id="clip0_35_24">
                                                     <rect fill="white" height="14" width="69"></rect>
-                                                </g>
+                                                </clipPath>
                                             </defs>
                                         </svg>
 
@@ -342,6 +360,14 @@ export default function Dashboard() {
                                 </td>
                             </tr>
                         ))}
+
+                        {cars.length === 0 && (
+                            <tr>
+                                <td colSpan={6} className="text-center text-muted py-4">
+                                    No cars found.
+                                </td>
+                            </tr>
+                        )}
                         </tbody>
                     </table>
                 </div>

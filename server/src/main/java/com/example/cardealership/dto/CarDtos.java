@@ -3,6 +3,7 @@ package com.example.cardealership.dto;
 import com.example.cardealership.domain.Car;
 import jakarta.validation.constraints.*;
 import lombok.*;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -97,5 +98,43 @@ public class CarDtos {
                     .map(CarResponse::from)
                     .toList();
         }
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class CarPageResponse {
+        private List<CarResponse> content;
+        private int page;
+        private int size;
+        private long totalElements;
+        private int totalPages;
+        private boolean first;
+        private boolean last;
+        private String sortBy;
+        private String sortDir;
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class CarSearchRequest {
+        private String search;
+        private String make;
+        private String model;
+        private Integer yearFrom;
+        private Integer yearTo;
+        private BigDecimal priceFrom;
+        private BigDecimal priceTo;
+        private String fuelType;
+        private String transmission;
+        private Integer page;
+        private Integer size;
+        private String sortBy;
+        private String sortDir;
     }
 }

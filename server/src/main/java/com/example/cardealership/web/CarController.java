@@ -8,8 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/v1/cars")
 @RequiredArgsConstructor
@@ -18,23 +16,26 @@ public class CarController {
     private final CarService service;
 
     @GetMapping
-    public List<CarDtos.CarResponse> all() {
-        return service.findAll();
+    public CarDtos.CarPageResponse all(CarDtos.CarSearchRequest request) {
+        return service.findAll(request);
     }
 
     @GetMapping("/{id}")
-    public CarDtos.CarResponse get(@PathVariable("id") Long id) {
+    public CarDtos.CarResponse get(@PathVariable Long id) {
         return service.findById(id);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<CarDtos.CarResponse> create(@Valid @RequestBody CarDtos.CreateCarRequest req) {
-        return ResponseEntity.ok(service.create(req));
+    public ResponseEntity<CarDtos.CarResponse> create(
+            @Valid @RequestBody CarDtos.CreateCarRequest request
+    ) {
+        return ResponseEntity.ok(service.create(request));
     }
+
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }

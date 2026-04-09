@@ -11,7 +11,19 @@ export type Car = {
     transmission?: string;
     doors?: number;
     ownerCount?: number;
-}
+};
+
+export type CarPageResponse = {
+    content: Car[];
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+    first: boolean;
+    last: boolean;
+    sortBy: string;
+    sortDir: string;
+};
 
 export type RecommendationCar = {
     Year: number;

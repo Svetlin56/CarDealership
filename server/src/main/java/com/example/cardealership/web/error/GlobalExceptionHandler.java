@@ -2,29 +2,29 @@ package com.example.cardealership.web.error;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
-import org.springframework.http.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex) {
-
         Map<String, String> errors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
                 .collect(Collectors.toMap(
                         FieldError::getField,
-                        fe -> Objects.requireNonNullElse(
-                                fe.getDefaultMessage(),
-                                "Invalid value"
-                        ),
+                        fe -> Objects.requireNonNullElse(fe.getDefaultMessage(), "Invalid value"),
                         (a, b) -> a
                 ));
 
@@ -34,7 +34,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiError> handleConstraint(ConstraintViolationException ex) {
-
         Map<String, String> errors = ex.getConstraintViolations()
                 .stream()
                 .collect(Collectors.toMap(
@@ -49,7 +48,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DuplicateVinException.class)
     public ResponseEntity<ApiError> handleDuplicateVin(DuplicateVinException ex) {
-
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body(new ApiError(
@@ -65,7 +63,7 @@ public class GlobalExceptionHandler {
                 .body(new ApiError("Invalid email or password", null));
     }
 
-    @ExceptionHandler(java.util.NoSuchElementException.class)
+    @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<ApiError> handleNotFound(NoSuchElementException ex) {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
@@ -73,9 +71,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ApiError> handleConflict(IllegalArgumentException ex) {
+    public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity
-                .status(HttpStatus.CONFLICT)
+                .status(HttpStatus.BAD_REQUEST)
                 .body(new ApiError(ex.getMessage(), null));
     }
 
@@ -88,7 +86,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleOthers() {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiError("Internal server error", null));
     }
 }

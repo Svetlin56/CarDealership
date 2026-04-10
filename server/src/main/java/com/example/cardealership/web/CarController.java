@@ -21,7 +21,7 @@ public class CarController {
     }
 
     @GetMapping("/{id}")
-    public CarDtos.CarResponse get(@PathVariable Long id) {
+    public CarDtos.CarResponse get(@PathVariable("id") Long id) {
         return service.findById(id);
     }
 
@@ -35,7 +35,7 @@ public class CarController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }

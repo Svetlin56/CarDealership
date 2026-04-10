@@ -29,6 +29,20 @@ const makeOptions = [
 const transmissionOptions = ["Manual", "Automatic", "Semi-automatic", "CVT"];
 const fuelTypeOptions = ["Petrol", "Diesel", "Hybrid", "Electric", "LPG"];
 
+function sanitizeNonNegativeInput(value: string): string {
+    if (!value.trim()) {
+        return "";
+    }
+
+    const parsed = Number(value);
+
+    if (Number.isNaN(parsed)) {
+        return "";
+    }
+
+    return parsed < 0 ? "0" : value;
+}
+
 export default function Cars() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [data, setData] = useState<CarPageResponse | null>(null);
@@ -93,6 +107,10 @@ export default function Cars() {
 
         next.set("page", "0");
         setSearchParams(next);
+    };
+
+    const updateNonNegativeFilter = (key: string, value: string) => {
+        updateFilter(key, sanitizeNonNegativeInput(value));
     };
 
     const changePage = (page: number) => {
@@ -177,40 +195,44 @@ export default function Cars() {
                 <div className="col-6 col-lg-2">
                     <input
                         type="number"
+                        min="0"
                         className="form-control"
                         placeholder="Year from"
                         value={filters.yearFrom}
-                        onChange={e => updateFilter("yearFrom", e.target.value)}
+                        onChange={e => updateNonNegativeFilter("yearFrom", e.target.value)}
                     />
                 </div>
 
                 <div className="col-6 col-lg-2">
                     <input
                         type="number"
+                        min="0"
                         className="form-control"
                         placeholder="Year to"
                         value={filters.yearTo}
-                        onChange={e => updateFilter("yearTo", e.target.value)}
+                        onChange={e => updateNonNegativeFilter("yearTo", e.target.value)}
                     />
                 </div>
 
                 <div className="col-6 col-lg-2">
                     <input
                         type="number"
+                        min="0"
                         className="form-control"
                         placeholder="Price from"
                         value={filters.priceFrom}
-                        onChange={e => updateFilter("priceFrom", e.target.value)}
+                        onChange={e => updateNonNegativeFilter("priceFrom", e.target.value)}
                     />
                 </div>
 
                 <div className="col-6 col-lg-2">
                     <input
                         type="number"
+                        min="0"
                         className="form-control"
                         placeholder="Price to"
                         value={filters.priceTo}
-                        onChange={e => updateFilter("priceTo", e.target.value)}
+                        onChange={e => updateNonNegativeFilter("priceTo", e.target.value)}
                     />
                 </div>
 

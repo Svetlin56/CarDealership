@@ -15,8 +15,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 @Service
@@ -70,13 +72,28 @@ public class CarService {
                 ? Sort.Direction.ASC
                 : Sort.Direction.DESC;
 
+        Integer normalizedYearFrom = normalizeNonNegative(request.getYearFrom());
+        Integer normalizedYearTo = normalizeNonNegative(request.getYearTo());
+        BigDecimal normalizedPriceFrom = normalizeNonNegative(request.getPriceFrom());
+        BigDecimal normalizedPriceTo = normalizeNonNegative(request.getPriceTo());
+
         Pageable pageable = PageRequest.of(
                 normalizedPage,
                 normalizedSize,
                 Sort.by(direction, normalizedSortBy)
         );
 
-        Specification<Car> specification = buildSpecification(request);
+        Specification<Car> specification = buildSpecification(
+                request.getSearch(),
+                request.getMake(),
+                request.getModel(),
+                normalizedYearFrom,
+                normalizedYearTo,
+                normalizedPriceFrom,
+                normalizedPriceTo,
+                request.getFuelType(),
+                request.getTransmission()
+        );
 
         Page<Car> carPage = carRepository.findAll(specification, pageable);
 
@@ -94,7 +111,9 @@ public class CarService {
     }
 
     public CarDtos.CarResponse findById(Long id) {
-        Car car = carRepository.findById(id).orElseThrow();
+        Car car = carRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Car with id " + id + " was not found."));
+
         return CarDtos.CarResponse.from(car);
     }
 
@@ -104,15 +123,25 @@ public class CarService {
         carRepository.deleteById(id);
     }
 
-    private Specification<Car> buildSpecification(CarDtos.CarSearchRequest request) {
+    private Specification<Car> buildSpecification(
+            String search,
+            String make,
+            String model,
+            Integer yearFrom,
+            Integer yearTo,
+            BigDecimal priceFrom,
+            BigDecimal priceTo,
+            String fuelType,
+            String transmission
+    ) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            String normalizedSearch = normalize(request.getSearch());
-            String normalizedMake = normalize(request.getMake());
-            String normalizedModel = normalize(request.getModel());
-            String normalizedFuelType = normalize(request.getFuelType());
-            String normalizedTransmission = normalize(request.getTransmission());
+            String normalizedSearch = normalize(search);
+            String normalizedMake = normalize(make);
+            String normalizedModel = normalize(model);
+            String normalizedFuelType = normalize(fuelType);
+            String normalizedTransmission = normalize(transmission);
 
             if (normalizedSearch != null) {
                 String pattern = "%" + normalizedSearch.toLowerCase() + "%";
@@ -132,20 +161,20 @@ public class CarService {
                 predicates.add(cb.equal(cb.lower(root.get("model")), normalizedModel.toLowerCase()));
             }
 
-            if (request.getYearFrom() != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("prodYear"), request.getYearFrom()));
+            if (yearFrom != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("prodYear"), yearFrom));
             }
 
-            if (request.getYearTo() != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("prodYear"), request.getYearTo()));
+            if (yearTo != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("prodYear"), yearTo));
             }
 
-            if (request.getPriceFrom() != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("price"), request.getPriceFrom()));
+            if (priceFrom != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("price"), priceFrom));
             }
 
-            if (request.getPriceTo() != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("price"), request.getPriceTo()));
+            if (priceTo != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("price"), priceTo));
             }
 
             if (normalizedFuelType != null) {
@@ -180,5 +209,21 @@ public class CarService {
 
     private int defaultIfNull(Integer value, int defaultValue) {
         return value != null ? value : defaultValue;
+    }
+
+    private Integer normalizeNonNegative(Integer value) {
+        if (value == null) {
+            return null;
+        }
+
+        return Math.max(value, 0);
+    }
+
+    private BigDecimal normalizeNonNegative(BigDecimal value) {
+        if (value == null) {
+            return null;
+        }
+
+        return value.signum() < 0 ? BigDecimal.ZERO : value;
     }
 }

@@ -1,95 +1,152 @@
-Car Dealership
 
-Car Dealership is a full-stack web application for listing, browsing, and searching cars for sale. The project is developed for educational and demonstration purposes and showcases a modern web application architecture.
+## 📌 Overview
 
-📌 Features
+This project is a **modern multi-service application** consisting of:
 
-📄 Browse available cars
+- **Frontend (React + TypeScript)** – user interface
+- **Backend (Spring Boot)** – REST API & business logic
+- **ML Service (Python)** – recommendation engine
 
-🔍 Search cars by make and production year
+The system allows users to:
+- Browse available cars
+- View detailed listings
+- Register and authenticate (including Google OAuth)
+- Receive personalized car recommendations
+- Admins can manage listings
 
-🔐 Authentication and authorization using JWT
+---
 
-👤 Role-based access (USER / ADMIN)
-
-🛠 Admin dashboard for car management
-
-🌐 RESTful API
-
-🧱 Architecture
-
-The application follows a three-tier architecture:
-
-Frontend – React + TypeScript
-
-Backend – Spring Boot (Java)
-
-Database – MySQL (Hibernate / JPA)
-
-🛠 Technologies Used
-Backend
-
-Java 17
-
-Spring Boot
-
-Spring Data JPA
-
-Spring Security
-
-JWT / OAuth2
-
-MySQL
-
-Frontend
-
-React
-
-TypeScript
-
-Bootstrap
-
-Axios
-
-🔍 Example API Endpoint
-GET /api/v1/cars?make=BMW&year=2016
+## 🏗️ Architecture
 
 
-Returns a list of cars matching the given search criteria.
+[ React Frontend ]
+↓
+[ Spring Boot API ]
+↓
+[ ML Recommendation Service (Python) ]
 
-▶️ Running the Project
-Backend
 
-Configure a MySQL database
+- Frontend communicates with backend via REST API
+- Backend handles authentication, business logic, and persistence
+- ML service provides recommendation results based on user preferences
 
-Run the Spring Boot application
+---
 
-Frontend
-npm install
-npm run dev
+## ⚙️ Tech Stack
 
-🎯 Project Purpose
+### Frontend
+- React
+- TypeScript
+- Vite
+- Context API
 
-This project demonstrates:
+### Backend
+- Spring Boot
+- Spring Security
+- RESTful API
+- JWT Authentication
 
-REST API design
+### Machine Learning Service
+- Python
+- Custom recommendation model
+- CSV dataset (`cars.csv`)
 
-Frontend–backend integration
+---
 
-Database management
+## ✨ Features
 
-Security and role-based access control
+### 🔐 Authentication & Authorization
+- User registration & login
+- Google OAuth integration
+- Role-based access (User / Admin)
 
-Development of a real-world web application
+### 🚘 Car Listings
+- Browse all cars
+- View detailed car information
+- Admin CRUD operations
+
+### 🤖 Recommendations
+- ML-powered car suggestions
+- Based on user preferences and dataset
+
+### 📊 Dashboard
+- Personalized user dashboard
+- Admin management interface
+
+---
+
+## 📁 Project Structure
+
+
+CarDealership/
+│
+├── client/ # React frontend
+├── server/ # Spring Boot backend
+├── ml-service/ # Python ML service
+│
+└── README.md
+
+
+---
+
+## 🚀 Getting Started
+
+1. Start Backend (Spring Boot)
+
+   cd server
+
+   ./mvnw spring-boot:run
+
+2. Start Frontend
+
+   cd client
+
+   npm install
+
+   npm run dev
+
+3. Start ML Service
+
+   cd ml-service
+
+   pip install -r requirements.txt
+
+   python app.py
+
+🧠 Machine Learning
+
+The ML service:
+Uses a dataset of cars (cars.csv)
+Trains a recommendation model (train.py)
+Serves predictions via API (app.py)
+
+🛡️ Security
+
+JWT-based authentication
+Protected routes
+Role-based access control
+CORS configuration
+
+🧪 Future Improvements
+
+Advanced filtering (price, brand, fuel type)
+Pagination & search optimization
+Docker & Kubernetes deployment
+Real-time notifications
+Improved ML model (collaborative filtering)
 
 👨‍💻 Author
 
-Developed for academic and educational purposes. 
+Developed as a full-stack project demonstrating:
+Scalable architecture
+Microservice design
+Integration of ML into web applications
+
+📜 License
+
+This project is for educational purposes.
 
 This project uses the Car Price Prediction dataset published on Kaggle.
-
 Author: Mustafa Oz  
 Source: https://www.kaggle.com/code/mustafaoz158/car-price-prediction/notebook  
 License: Apache License 2.0
-
-The dataset is used for training a machine learning model that predicts vehicle prices based on vehicle characteristics such as year, mileage, engine size and fuel type.

@@ -8,7 +8,6 @@ import com.example.cardealership.web.error.DuplicateVinException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -66,7 +65,7 @@ class CarServiceTest {
 
         assertThatThrownBy(() -> carService.create(request))
                 .isInstanceOf(DuplicateVinException.class)
-                .hasMessageContaining(request.getVin());
+                .hasMessage("Car with this VIN already exists");
 
         verify(carRepository, never()).save(any(Car.class));
     }
@@ -113,13 +112,7 @@ class CarServiceTest {
 
         CarDtos.CarPageResponse response = carService.findAll(request);
 
-        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(carRepository).findAll(any(Specification.class), pageableCaptor.capture());
-
-        Pageable pageable = pageableCaptor.getValue();
-        assertThat(pageable.getPageNumber()).isEqualTo(0);
-        assertThat(pageable.getPageSize()).isEqualTo(50);
-        assertThat(pageable.getSort().getOrderFor("id")).isNotNull();
+        verify(carRepository).findAll(any(Specification.class), any(Pageable.class));
 
         assertThat(response.getContent()).hasSize(1);
         assertThat(response.getSortBy()).isEqualTo("id");

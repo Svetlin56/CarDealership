@@ -7,6 +7,9 @@ import com.example.cardealership.security.GoogleSuccessHandler;
 import com.example.cardealership.security.JwtAuthFilter;
 import com.example.cardealership.service.CarService;
 import com.example.cardealership.web.error.GlobalExceptionHandler;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +26,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -55,11 +59,20 @@ class CarControllerTest {
     private BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         when(corsProperties.getAllowedOrigins()).thenReturn(List.of("http://localhost:5173"));
         when(userDetailsService.loadUserByUsername(any())).thenReturn(
                 User.withUsername("admin@test.com").password("password").roles("ADMIN").build()
         );
+
+        doAnswer(invocation -> {
+            FilterChain chain = invocation.getArgument(2);
+            chain.doFilter(
+                    (ServletRequest) invocation.getArgument(0),
+                    (ServletResponse) invocation.getArgument(1)
+            );
+            return null;
+        }).when(jwtAuthFilter).doFilter(any(), any(), any());
     }
 
     @Test
@@ -91,8 +104,9 @@ class CarControllerTest {
 
         when(carService.findAll(any(CarDtos.CarSearchRequest.class))).thenReturn(response);
 
-        mockMvc.perform(get("/api/v1/cars"))
+        mockMvc.perform(get("/api/v1/cars").with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("user@test.com").roles("USER")))
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
                 .andExpect(jsonPath("$.content[0].make").value("BMW"));
     }
 
@@ -144,6 +158,7 @@ class CarControllerTest {
                         .contentType(APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.make").value("BMW"));
     }

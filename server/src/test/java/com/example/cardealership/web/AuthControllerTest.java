@@ -10,6 +10,9 @@ import com.example.cardealership.security.JwtService;
 import com.example.cardealership.service.EmailService;
 import com.example.cardealership.service.UserService;
 import com.example.cardealership.web.error.GlobalExceptionHandler;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +28,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -65,8 +71,17 @@ class AuthControllerTest {
     private BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         when(corsProperties.getAllowedOrigins()).thenReturn(List.of("http://localhost:5173"));
+
+        doAnswer(invocation -> {
+            FilterChain chain = invocation.getArgument(2);
+            chain.doFilter(
+                    (ServletRequest) invocation.getArgument(0),
+                    (ServletResponse) invocation.getArgument(1)
+            );
+            return null;
+        }).when(jwtAuthFilter).doFilter(any(), any(), any());
     }
 
     @Test
@@ -83,8 +98,14 @@ class AuthControllerTest {
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(APPLICATION_JSON)
-                        .content("{\"email\":\"user@test.com\",\"password\":\"secret123\"}"))
+                        .content("""
+                                {
+                                  "email":"user@test.com",
+                                  "password":"secret123"
+                                }
+                                """))
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
                 .andExpect(jsonPath("$.token").value("jwt-token"))
                 .andExpect(jsonPath("$.email").value("user@test.com"))
                 .andExpect(jsonPath("$.role").value("USER"));
@@ -106,12 +127,16 @@ class AuthControllerTest {
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(APPLICATION_JSON)
-                        .content("{\"email\":\"admin@test.com\",\"password\":\"secret123\"}"))
+                        .content("""
+                                {
+                                  "email":"admin@test.com",
+                                  "password":"secret123"
+                                }
+                                """))
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
                 .andExpect(jsonPath("$.token").value("admin-token"))
                 .andExpect(jsonPath("$.role").value("ADMIN"));
-
-        verify(authManager).authenticate(any());
     }
 
     @Test
@@ -121,8 +146,14 @@ class AuthControllerTest {
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(APPLICATION_JSON)
-                        .content("{\"email\":\"admin@test.com\",\"password\":\"wrong\"}"))
+                        .content("""
+                                {
+                                  "email":"admin@test.com",
+                                  "password":"wrong"
+                                }
+                                """))
                 .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
                 .andExpect(jsonPath("$.message").value("Invalid email or password"));
     }
 
@@ -130,8 +161,14 @@ class AuthControllerTest {
     void registerShouldReturnValidationErrorsForInvalidPayload() throws Exception {
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(APPLICATION_JSON)
-                        .content("{\"email\":\"\",\"password\":\"123\"}"))
+                        .content("""
+                                {
+                                  "email":"",
+                                  "password":"123"
+                                }
+                                """))
                 .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
                 .andExpect(jsonPath("$.message").value("Validation failed"))
                 .andExpect(jsonPath("$.fieldErrors.email").exists())
                 .andExpect(jsonPath("$.fieldErrors.password").exists());

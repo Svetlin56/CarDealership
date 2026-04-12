@@ -9,6 +9,9 @@ import com.example.cardealership.security.JwtAuthFilter;
 import com.example.cardealership.service.ListingService;
 import com.example.cardealership.web.error.GlobalExceptionHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +30,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -62,11 +66,20 @@ class ListingControllerTest {
     private BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         when(corsProperties.getAllowedOrigins()).thenReturn(List.of("http://localhost:5173"));
         when(userDetailsService.loadUserByUsername(any())).thenReturn(
                 User.withUsername("admin@test.com").password("password").roles("ADMIN").build()
         );
+
+        doAnswer(invocation -> {
+            FilterChain chain = invocation.getArgument(2);
+            chain.doFilter(
+                    (ServletRequest) invocation.getArgument(0),
+                    (ServletResponse) invocation.getArgument(1)
+            );
+            return null;
+        }).when(jwtAuthFilter).doFilter(any(), any(), any());
     }
 
     @Test
@@ -101,6 +114,7 @@ class ListingControllerTest {
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
                 .andExpect(jsonPath("$.seller.email").value("admin@test.com"))
                 .andExpect(jsonPath("$.car.make").value("Audi"));
     }
@@ -148,6 +162,7 @@ class ListingControllerTest {
                         .contentType(APPLICATION_JSON)
                         .content("{\"status\":\"sold\"}"))
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
                 .andExpect(jsonPath("$.status").value("SOLD"));
     }
 }

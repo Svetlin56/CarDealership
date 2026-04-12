@@ -6,15 +6,15 @@ VALUES (
        );
 
 INSERT INTO car (make, model, prod_year, mileage, vin, price, image_url) VALUES
-    ('BMW','320d',2016,145000,'WBA8D3C54GK421563',6000.00,'https://media.drive.com.au/obj/tx_q:50,rs:auto:1920:1080:1/caradvice/private/25311edf22f469df49e5bb36e39c6221'),
-    ('VW','Golf 7',2015,175000,'WVWZZZ1KZFW247681',9500.00,'https://upload.wikimedia.org/wikipedia/commons/9/94/VW_Golf_2.0_TDI_BlueMotion_Technology_Highline_%28VII%29_%E2%80%93_Frontansicht%2C_28._Juli_2013%2C_M%C3%BCnster.jpg'),
-    ('Mercedes','C-Class',2017,120000,'WDD2052061F784215',12000.00,'https://carwow-uk-wp-3.imgix.net/C-Class_126_3.jpg'),
-    ('Audi','A4',2018,130000,'WAUZZZ8KXJA635824',8000.00,'https://media.ed.edmunds-media.com/audi/a4/2018/oem/2018_audi_a4_sedan_20-tfsi-prestige-quattro_fq_oem_1_1600.jpg'),
-    ('BMW','X5',2019,95000,'WBAKF2C02K0A52618',20000.00,'https://hips.hearstapps.com/hmg-prod/images/2019-bmw-x5-gallery-lead-1544808509.jpg'),
-    ('Toyota','Corolla',2020,85000,'JTDBU4EE0LJ584216',10000.00,'https://toyotacanada.scene7.com/is/image/toyotacanada/2020_Corolla_Sedan'),
-    ('Ford','Mustang',2018,35000,'1FA6P8CF8J5173624',27000.00,'https://i.gaw.to/content/photos/31/45/314522_2018_Ford_Mustang.jpg'),
-    ('Nissan','GTR',2018,25000,'JN1AR5EF2JM483215',15000.00,'https://images.hgmsites.net/hug/nissan-gt-r_100631725_h.jpg'),
-    ('Chevrolet','Malibu',2019,105000,'1G1ZD5ST6KF742138',14000.00,'https://dealerimages.dealereprocess.com/image/upload/w_1000/1081654.jpg');
+    ('BMW','320d',2016,145000,'WBA8D3C54GK421563',6000.00,'https://images.unsplash.com/photo-1686889903827-81e274b51bd4?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'),
+    ('VW','Golf 7',2015,175000,'WVWZZZ1KZFW247681',9500.00,'https://images.unsplash.com/photo-1683444126212-50c0aa2a421b?q=80&w=1169&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'),
+    ('Mercedes','C-Class',2017,120000,'WDD2052061F784215',12000.00,'https://images.unsplash.com/photo-1686562483617-3cf08d81e117?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'),
+    ('Audi','A4',2018,130000,'WAUZZZ8KXJA635824',8000.00,'https://images.unsplash.com/photo-1622198750361-6e94cb857945?q=80&w=765&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'),
+    ('BMW','X5',2019,95000,'WBAKF2C02K0A52618',20000.00,'https://images.unsplash.com/photo-1652453456487-f5be1b89a38b?q=80&w=764&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'),
+    ('Toyota','Corolla',2020,85000,'JTDBU4EE0LJ584216',10000.00,'https://images.unsplash.com/photo-1638618164682-12b986ec2a75?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'),
+    ('Ford','Mustang',2018,35000,'1FA6P8CF8J5173624',27000.00,'https://images.unsplash.com/photo-1547744152-14d985cb937f?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'),
+    ('Nissan','GTR',2018,25000,'JN1AR5EF2JM483215',15000.00,'https://images.unsplash.com/photo-1609964729554-a02fb2a04830?q=80&w=765&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'),
+    ('Chevrolet','Malibu',2019,105000,'1G1ZD5ST6KF742138',14000.00,'https://images.unsplash.com/photo-1670800811775-63b858f1b37a?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
 
 INSERT INTO listing (car_id, seller_id, description, status)
 VALUES

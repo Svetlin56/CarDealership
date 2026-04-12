@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -21,10 +22,12 @@ public class ListingController {
     public List<ListingDtos.ListingResponse> all() {
         return service.all();
     }
+
     @GetMapping("/{id}")
-    public ListingDtos.ListingResponse get(@PathVariable Long id) {
+    public ListingDtos.ListingResponse get(@PathVariable("id") Long id) {
         return service.get(id);
     }
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ListingDtos.ListingResponse> create(
@@ -38,7 +41,7 @@ public class ListingController {
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ListingDtos.ListingResponse> updateStatus(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @Valid @RequestBody ListingDtos.UpdateListingStatusRequest req
     ) {
         return ResponseEntity.ok(service.updateStatus(id, req));

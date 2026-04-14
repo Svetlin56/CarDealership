@@ -1,7 +1,7 @@
 
 ## 📌 Overview
 
-This project is a **modern multi-service application** consisting of:
+This project consist:
 
 - **Frontend (React + TypeScript)** – user interface
 - **Backend (Spring Boot)** – REST API & business logic
@@ -19,11 +19,15 @@ The system allows users to:
 ## 🏗️ Architecture
 
 
-[ React Frontend ]
-↓
-[ Spring Boot API ]
-↓
-[ ML Recommendation Service (Python) ]
+      [ React Frontend ]
+
+               ↓
+
+      [ Spring Boot API ]
+
+               ↓
+
+      [ ML Recommendation Service (Python) ]
 
 
 - Frontend communicates with backend via REST API
@@ -78,13 +82,13 @@ The system allows users to:
 ## 📁 Project Structure
 
 
-CarDealership/
-│
-├── client/ # React frontend
-├── server/ # Spring Boot backend
-├── ml-service/ # Python ML service
-│
-└── README.md
+      CarDealership/
+      │
+      ├── client/ # React frontend
+      ├── server/ # Spring Boot backend
+      ├── ml-service/ # Python ML service
+      │
+      └── README.md
 
 
 ---

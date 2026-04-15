@@ -25,7 +25,7 @@ export type CarPageResponse = {
     sortDir: string;
 };
 
-export type RecommendationCar = {
+export type MlRecommendationApiResponse = {
     Year: number;
     Engine_Size: number;
     Fuel_Type: string;
@@ -45,4 +45,30 @@ export type RecommendationCar = {
     car_type: string;
     confidence: number;
     explanation: string;
+};
+
+export type MlRecommendation = {
+    year: number;
+    engineSize: number;
+    fuelType: string;
+    transmission: string;
+    mileage: number;
+    doors: number;
+    ownerCount: number;
+    brand: string;
+    model: string;
+    price?: number;
+    predictedPrice: number;
+    score: number;
+    valueScore: number;
+    goodDeal: boolean;
+    anomalyRatio: number;
+    anomalyLabel: "OVERPRICED" | "UNDERVALUED" | "FAIR" | "UNKNOWN";
+    carType: string;
+    confidence: number;
+    explanation: string;
+};
+
+export type MlPredictionResponse = {
+    predicted_price: number;
 };

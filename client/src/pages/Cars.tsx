@@ -1,69 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import http from "../api/http";
 import CarCard from "../components/CarCard";
+import { useCarFilters } from "../hooks/useCarFilters";
+import { FUEL_TYPE_OPTIONS, MAKE_OPTIONS, TRANSMISSION_OPTIONS } from "../constants/carOptions";
 import { CarPageResponse } from "../types/models";
 
-const makeOptions = [
-    "BMW",
-    "Audi",
-    "Mercedes",
-    "Peugeot",
-    "Fiat",
-    "VW",
-    "Citroen",
-    "Opel",
-    "Ford",
-    "Toyota",
-    "Hyundai",
-    "Kia",
-    "Skoda",
-    "Seat",
-    "Renault",
-    "Nissan",
-    "Mazda",
-    "Honda",
-    "Volvo"
-];
-
-const transmissionOptions = ["Manual", "Automatic", "Semi-automatic", "CVT"];
-const fuelTypeOptions = ["Petrol", "Diesel", "Hybrid", "Electric", "LPG"];
-
-function sanitizeNonNegativeInput(value: string): string {
-    if (!value.trim()) {
-        return "";
-    }
-
-    const parsed = Number(value);
-
-    if (Number.isNaN(parsed)) {
-        return "";
-    }
-
-    return parsed < 0 ? "0" : value;
-}
-
 export default function Cars() {
-    const [searchParams, setSearchParams] = useSearchParams();
+    const { filters, updateFilter, updateNonNegativeFilter, changePage, clearFilters } = useCarFilters();
     const [data, setData] = useState<CarPageResponse | null>(null);
     const [loading, setLoading] = useState(true);
-
-    const filters = useMemo(() => {
-        return {
-            search: searchParams.get("search") ?? "",
-            make: searchParams.get("make") ?? "",
-            fuelType: searchParams.get("fuelType") ?? "",
-            transmission: searchParams.get("transmission") ?? "",
-            yearFrom: searchParams.get("yearFrom") ?? "",
-            yearTo: searchParams.get("yearTo") ?? "",
-            priceFrom: searchParams.get("priceFrom") ?? "",
-            priceTo: searchParams.get("priceTo") ?? "",
-            page: Number(searchParams.get("page") ?? "0"),
-            size: Number(searchParams.get("size") ?? "9"),
-            sortBy: searchParams.get("sortBy") ?? "id",
-            sortDir: searchParams.get("sortDir") ?? "desc"
-        };
-    }, [searchParams]);
 
     useEffect(() => {
         const loadCars = async () => {
@@ -96,38 +41,6 @@ export default function Cars() {
         loadCars();
     }, [filters]);
 
-    const updateFilter = (key: string, value: string) => {
-        const next = new URLSearchParams(searchParams);
-
-        if (value.trim()) {
-            next.set(key, value);
-        } else {
-            next.delete(key);
-        }
-
-        next.set("page", "0");
-        setSearchParams(next);
-    };
-
-    const updateNonNegativeFilter = (key: string, value: string) => {
-        updateFilter(key, sanitizeNonNegativeInput(value));
-    };
-
-    const changePage = (page: number) => {
-        const next = new URLSearchParams(searchParams);
-        next.set("page", page.toString());
-        setSearchParams(next);
-    };
-
-    const clearFilters = () => {
-        setSearchParams({
-            page: "0",
-            size: "9",
-            sortBy: "id",
-            sortDir: "desc"
-        });
-    };
-
     return (
         <div className="container mt-4">
             <div className="row g-3 mb-4">
@@ -148,7 +61,7 @@ export default function Cars() {
                         onChange={e => updateFilter("make", e.target.value)}
                     >
                         <option value="">All brands</option>
-                        {makeOptions.map(make => (
+                        {MAKE_OPTIONS.map(make => (
                             <option key={make} value={make}>
                                 {make}
                             </option>
@@ -163,7 +76,7 @@ export default function Cars() {
                         onChange={e => updateFilter("fuelType", e.target.value)}
                     >
                         <option value="">All fuel types</option>
-                        {fuelTypeOptions.map(option => (
+                        {FUEL_TYPE_OPTIONS.map(option => (
                             <option key={option} value={option}>
                                 {option}
                             </option>
@@ -178,7 +91,7 @@ export default function Cars() {
                         onChange={e => updateFilter("transmission", e.target.value)}
                     >
                         <option value="">All transmissions</option>
-                        {transmissionOptions.map(option => (
+                        {TRANSMISSION_OPTIONS.map(option => (
                             <option key={option} value={option}>
                                 {option}
                             </option>
@@ -283,9 +196,9 @@ export default function Cars() {
                     </div>
 
                     <div className="row g-3">
-                        {data.content.map(c => (
-                            <div className="col-12 col-sm-6 col-lg-4" key={c.id}>
-                                <CarCard car={c} />
+                        {data.content.map(car => (
+                            <div className="col-12 col-sm-6 col-lg-4" key={car.id}>
+                                <CarCard car={car} />
                             </div>
                         ))}
                     </div>

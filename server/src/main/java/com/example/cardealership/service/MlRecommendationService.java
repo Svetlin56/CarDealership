@@ -1,13 +1,24 @@
 package com.example.cardealership.service;
 
 import com.example.cardealership.domain.Car;
+import com.example.cardealership.dto.MlPredictionResponse;
+import com.example.cardealership.dto.MlRecommendationRequest;
+import com.example.cardealership.dto.MlRecommendationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -18,49 +29,41 @@ public class MlRecommendationService {
     @Value("${ml.service.base-url:http://localhost:5000}")
     private String mlServiceBaseUrl;
 
-    public List<Map<String, Object>> recommend(List<Car> cars) {
+    public List<MlRecommendationResponse> recommend(List<Car> cars) {
         try {
             if (cars == null || cars.isEmpty()) {
                 return Collections.emptyList();
             }
 
-            List<Map<String, Object>> payload = cars.stream()
+            List<MlRecommendationRequest> payload = cars.stream()
                     .map(this::mapCar)
                     .toList();
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            HttpEntity<List<Map<String, Object>>> requestEntity =
+            HttpEntity<List<MlRecommendationRequest>> requestEntity =
                     new HttpEntity<>(payload, headers);
 
-            ResponseEntity<Object[]> response = restTemplate.exchange(
+            ResponseEntity<List<MlRecommendationResponse>> response = restTemplate.exchange(
                     mlServiceBaseUrl + "/recommend",
                     HttpMethod.POST,
                     requestEntity,
-                    Object[].class
+                    new ParameterizedTypeReference<>() {
+                    }
             );
 
-            Object[] body = response.getBody();
+            List<MlRecommendationResponse> body = response.getBody();
             if (body == null) {
                 return Collections.emptyList();
             }
 
-            List<Map<String, Object>> result = new ArrayList<>();
-            for (Object obj : body) {
-                if (obj instanceof Map<?, ?> map) {
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> casted = (Map<String, Object>) map;
-                    result.add(casted);
-                }
-            }
+            body.sort(Comparator.comparing(
+                    MlRecommendationResponse::getValueScore,
+                    Comparator.nullsLast(Double::compareTo)
+            ).reversed());
 
-            result.sort((a, b) ->
-                    Double.compare(getDouble(b.get("value_score")), getDouble(a.get("value_score")))
-            );
-
-            return result;
-
+            return body;
         } catch (Exception e) {
             throw new RuntimeException("ML recommendation service failed", e);
         }
@@ -68,48 +71,44 @@ public class MlRecommendationService {
 
     public Double predict(Car car) {
         try {
-            Map<String, Object> payload = mapCar(car);
+            MlRecommendationRequest payload = mapCar(car);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            HttpEntity<Map<String, Object>> request =
-                    new HttpEntity<>(payload, headers);
+            HttpEntity<MlRecommendationRequest> request = new HttpEntity<>(payload, headers);
 
-            ResponseEntity<Map> response = restTemplate.exchange(
+            ResponseEntity<MlPredictionResponse> response = restTemplate.exchange(
                     mlServiceBaseUrl + "/predict",
                     HttpMethod.POST,
                     request,
-                    Map.class
+                    MlPredictionResponse.class
             );
 
-            Map<String, Object> body = response.getBody();
-            if (body == null || body.get("predicted_price") == null) {
+            MlPredictionResponse body = response.getBody();
+            if (body == null) {
                 return null;
             }
 
-            return Double.parseDouble(body.get("predicted_price").toString());
-
+            return body.getPredictedPrice();
         } catch (Exception e) {
             throw new RuntimeException("ML price prediction failed", e);
         }
     }
 
-    private Map<String, Object> mapCar(Car car) {
-        Map<String, Object> m = new HashMap<>();
-
-        m.put("Brand", normalize(car.getMake()));
-        m.put("Model", normalize(car.getModel()));
-        m.put("Year", safeInt(car.getProdYear(), 2018));
-        m.put("Engine_Size", safeDecimal(car.getEngineSize(), BigDecimal.valueOf(2.0)));
-        m.put("Fuel_Type", normalizeCategory(car.getFuelType(), "Petrol"));
-        m.put("Transmission", normalizeCategory(car.getTransmission(), "Automatic"));
-        m.put("Mileage", safeLong(car.getMileage(), 100_000L));
-        m.put("Doors", safeInt(car.getDoors(), 4));
-        m.put("Owner_Count", safeInt(car.getOwnerCount(), 1));
-        m.put("price", car.getPrice() != null ? car.getPrice().doubleValue() : 0.0);
-
-        return m;
+    private MlRecommendationRequest mapCar(Car car) {
+        return MlRecommendationRequest.builder()
+                .brand(normalize(car.getMake()))
+                .model(normalize(car.getModel()))
+                .year(safeInt(car.getProdYear(), 2018))
+                .engineSize(safeDecimal(car.getEngineSize(), BigDecimal.valueOf(2.0)))
+                .fuelType(normalizeCategory(car.getFuelType(), "Petrol"))
+                .transmission(normalizeCategory(car.getTransmission(), "Automatic"))
+                .mileage(safeLong(car.getMileage(), 100_000L))
+                .doors(safeInt(car.getDoors(), 4))
+                .ownerCount(safeInt(car.getOwnerCount(), 1))
+                .price(car.getPrice() != null ? car.getPrice() : BigDecimal.ZERO)
+                .build();
     }
 
     private String normalize(String value) {
@@ -136,15 +135,5 @@ public class MlRecommendationService {
 
     private Double safeDecimal(BigDecimal value, BigDecimal fallback) {
         return value != null ? value.doubleValue() : fallback.doubleValue();
-    }
-
-    private double getDouble(Object value) {
-        if (value == null) {
-            return 0.0;
-        }
-        if (value instanceof Number number) {
-            return number.doubleValue();
-        }
-        return Double.parseDouble(value.toString());
     }
 }

@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import http from "../api/http";
 import FormField from "../components/FormField";
 import { Car, CarPageResponse } from "../types/models";
-import React from "react";
 
 type CreateCarForm = {
     make: string;
@@ -17,79 +16,102 @@ type CreateCarForm = {
     engineSize: string;
 };
 
+const INITIAL_FORM: CreateCarForm = {
+    make: "",
+    model: "",
+    year: 2020,
+    mileage: 0,
+    vin: "",
+    price: 10000,
+    imageUrl: "",
+    transmission: "",
+    fuelType: "",
+    engineSize: ""
+};
+
+const BRANDS: Record<string, string[]> = {
+    BMW: ["X1", "X2", "X3", "X4", "X5", "X6", "M3"],
+    Audi: ["A1", "A2", "A3", "A4", "A5", "A6", "Q7"],
+    Mercedes: ["A-Class", "B-Class", "C-Class", "E-Class", "S-Class", "GLC"],
+    Peugeot: ["208", "2008", "308", "3008", "5008", "408", "Rifter"],
+    Fiat: ["500", "500X", "Panda", "Tipo", "Doblo", "Ducato", "600"],
+    VW: ["Polo", "Golf", "Passat", "Tiguan", "Touareg", "T-Roc", "ID.4"],
+    Citroen: ["C3", "C4", "C5 Aircross", "C3 Aircross", "Berlingo", "C4 X", "SpaceTourer"],
+    Opel: ["Corsa", "Astra", "Insignia", "Mokka", "Crossland", "Grandland", "Zafira"],
+    Ford: ["Fiesta", "Focus", "Mondeo", "Kuga", "Puma", "EcoSport", "Explorer"],
+    Toyota: ["Yaris", "Corolla", "Camry", "RAV4", "C-HR", "Hilux", "Land Cruiser"],
+    Hyundai: ["i10", "i20", "i30", "Elantra", "Tucson", "Santa Fe", "Kona"],
+    Kia: ["Picanto", "Rio", "Ceed", "Sportage", "Sorento", "Stonic", "Niro"],
+    Skoda: ["Fabia", "Octavia", "Superb", "Karoq", "Kodiaq", "Kamiq", "Scala"],
+    Seat: ["Ibiza", "Leon", "Ateca", "Arona", "Tarraco", "Toledo", "Alhambra"],
+    Renault: ["Clio", "Megane", "Talisman", "Captur", "Kadjar", "Austral", "Espace"],
+    Nissan: ["Micra", "Juke", "Qashqai", "X-Trail", "Navara", "Leaf", "Ariya"],
+    Mazda: ["Mazda2", "Mazda3", "Mazda6", "CX-3", "CX-5", "CX-30", "MX-5"],
+    Honda: ["Jazz", "Civic", "Accord", "CR-V", "HR-V", "ZR-V", "CR-Z"],
+    Volvo: ["S60", "S90", "V60", "V90", "XC40", "XC60", "XC90"]
+};
+
+const TRANSMISSION_OPTIONS = [
+    { value: "Manual", label: "Manual" },
+    { value: "Automatic", label: "Automatic" },
+    { value: "Semi-automatic", label: "Semi-automatic" },
+    { value: "CVT", label: "CVT" }
+];
+
+const FUEL_TYPE_OPTIONS = [
+    { value: "Petrol", label: "Petrol" },
+    { value: "Diesel", label: "Diesel" },
+    { value: "Hybrid", label: "Hybrid" },
+    { value: "Electric", label: "Electric" },
+    { value: "LPG", label: "LPG" }
+];
+
+function sanitizeVin(value: string): string {
+    return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 17);
+}
+
+function buildYearOptions() {
+    const currentYear = new Date().getFullYear();
+
+    return Array.from({ length: 85 }, (_, index) => {
+        const year = currentYear - index;
+
+        return {
+            value: year,
+            label: year.toString()
+        };
+    });
+}
+
 export default function Dashboard() {
     const [cars, setCars] = useState<Car[]>([]);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [search, setSearch] = useState("");
-    const [form, setForm] = useState<CreateCarForm>({
-        make: "",
-        model: "",
-        year: 2019,
-        mileage: 0,
-        vin: "",
-        price: 0,
-        imageUrl: "",
-        transmission: "",
-        fuelType: "",
-        engineSize: ""
-    });
+    const [form, setForm] = useState<CreateCarForm>(INITIAL_FORM);
 
-    const brands: Record<string, string[]> = {
-        BMW: ["X1", "X2", "X3", "X4", "X5", "X6", "M3"],
-        Audi: ["A1", "A2", "A3", "A4", "A5", "A6", "Q7"],
-        Mercedes: ["A-Class", "B-Class", "C-Class", "E-Class", "S-Class", "GLC"],
-        Peugeot: ["208", "2008", "308", "3008", "5008", "408", "Rifter"],
-        Fiat: ["500", "500X", "Panda", "Tipo", "Doblo", "Ducato", "600"],
-        VW: ["Polo", "Golf", "Passat", "Tiguan", "Touareg", "T-Roc", "ID.4"],
-        Citroen: ["C3", "C4", "C5 Aircross", "C3 Aircross", "Berlingo", "C4 X", "SpaceTourer"],
-        Opel: ["Corsa", "Astra", "Insignia", "Mokka", "Crossland", "Grandland", "Zafira"],
-        Ford: ["Fiesta", "Focus", "Mondeo", "Kuga", "Puma", "EcoSport", "Explorer"],
-        Toyota: ["Yaris", "Corolla", "Camry", "RAV4", "C-HR", "Hilux", "Land Cruiser"],
-        Hyundai: ["i10", "i20", "i30", "Elantra", "Tucson", "Santa Fe", "Kona"],
-        Kia: ["Picanto", "Rio", "Ceed", "Sportage", "Sorento", "Stonic", "Niro"],
-        Skoda: ["Fabia", "Octavia", "Superb", "Karoq", "Kodiaq", "Kamiq", "Scala"],
-        Seat: ["Ibiza", "Leon", "Ateca", "Arona", "Tarraco", "Toledo", "Alhambra"],
-        Renault: ["Clio", "Megane", "Talisman", "Captur", "Kadjar", "Austral", "Espace"],
-        Nissan: ["Micra", "Juke", "Qashqai", "X-Trail", "Navara", "Leaf", "Ariya"],
-        Mazda: ["Mazda2", "Mazda3", "Mazda6", "CX-3", "CX-5", "CX-30", "MX-5"],
-        Honda: ["Jazz", "Civic", "Accord", "CR-V", "HR-V", "ZR-V", "CR-Z"],
-        Volvo: ["S60", "S90", "V60", "V90", "XC40", "XC60", "XC90"]
-    };
+    const brandOptions = useMemo(
+        () =>
+            Object.keys(BRANDS).map(brand => ({
+                value: brand,
+                label: brand
+            })),
+        []
+    );
 
-    const brandOptions = Object.keys(brands).map(b => ({
-        value: b,
-        label: b
-    }));
+    const modelOptions = useMemo(() => {
+        if (!form.make || !BRANDS[form.make]) {
+            return [];
+        }
 
-    const modelOptions =
-        form.make && brands[form.make]
-            ? brands[form.make].map(m => ({
-                value: m,
-                label: m
-            }))
-            : [];
+        return BRANDS[form.make].map(model => ({
+            value: model,
+            label: model
+        }));
+    }, [form.make]);
 
-    const yearOptions = Array.from({ length: 85 }, (_, i) => {
-        const y = 2026 - i;
-        return { value: y, label: y.toString() };
-    });
+    const yearOptions = useMemo(() => buildYearOptions(), []);
 
-    const transmissionOptions = [
-        { value: "Manual", label: "Manual" },
-        { value: "Automatic", label: "Automatic" },
-        { value: "Semi-automatic", label: "Semi-automatic" },
-        { value: "CVT", label: "CVT" }
-    ];
-
-    const fuelTypeOptions = [
-        { value: "Petrol", label: "Petrol" },
-        { value: "Diesel", label: "Diesel" },
-        { value: "Hybrid", label: "Hybrid" },
-        { value: "Electric", label: "Electric" },
-        { value: "LPG", label: "LPG" }
-    ];
-
-    const load = async () => {
+    const loadCars = async () => {
         const res = await http.get<CarPageResponse>("/cars", {
             params: {
                 page: 0,
@@ -104,12 +126,12 @@ export default function Dashboard() {
     };
 
     useEffect(() => {
-        load();
+        loadCars();
     }, []);
 
     useEffect(() => {
         const timeout = setTimeout(() => {
-            load();
+            loadCars();
         }, 250);
 
         return () => clearTimeout(timeout);
@@ -120,15 +142,11 @@ export default function Dashboard() {
     ) => {
         const { name, value } = e.target;
 
-        let newValue = value;
-
-        if (name === "vin") {
-            newValue = value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 17);
-        }
+        const normalizedValue = name === "vin" ? sanitizeVin(value) : value;
 
         setForm(prev => ({
             ...prev,
-            [name]: newValue,
+            [name]: normalizedValue,
             ...(name === "make" ? { model: "" } : {})
         }));
 
@@ -136,6 +154,10 @@ export default function Dashboard() {
             ...prev,
             [name]: ""
         }));
+    };
+
+    const resetForm = () => {
+        setForm(INITIAL_FORM);
     };
 
     const addCar = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -151,20 +173,8 @@ export default function Dashboard() {
                 engineSize: form.engineSize ? Number(form.engineSize) : null
             });
 
-            setForm({
-                make: "",
-                model: "",
-                year: 2020,
-                mileage: 0,
-                vin: "",
-                price: 10000,
-                imageUrl: "",
-                transmission: "",
-                fuelType: "",
-                engineSize: ""
-            });
-
-            await load();
+            resetForm();
+            await loadCars();
         } catch (err: any) {
             const apiErrors = err.response?.data?.errors || err.response?.data?.fieldErrors;
 
@@ -176,7 +186,7 @@ export default function Dashboard() {
 
     const remove = async (id: number | undefined) => {
         await http.delete(`/cars/${id}`);
-        await load();
+        await loadCars();
     };
 
     return (
@@ -249,7 +259,7 @@ export default function Dashboard() {
                         value={form.transmission}
                         onChange={onChange}
                         as="select"
-                        options={transmissionOptions}
+                        options={TRANSMISSION_OPTIONS}
                         placeholder="Select Transmission"
                     />
 
@@ -259,7 +269,7 @@ export default function Dashboard() {
                         value={form.fuelType}
                         onChange={onChange}
                         as="select"
-                        options={fuelTypeOptions}
+                        options={FUEL_TYPE_OPTIONS}
                         placeholder="Select Fuel Type"
                     />
 

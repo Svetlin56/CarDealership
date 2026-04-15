@@ -1,22 +1,48 @@
 package com.example.cardealership.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class MlRecommendationRequest {
 
-    private Integer Year;
-    private Double Engine_Size;
-    private String Fuel_Type;
-    private String Transmission;
-    private Long Mileage;
-    private Integer Doors;
-    private Integer Owner_Count;
+    @JsonProperty("Year")
+    private Integer year;
+
+    @JsonProperty("Engine_Size")
+    private Double engineSize;
+
+    @JsonProperty("Fuel_Type")
+    private String fuelType;
+
+    @JsonProperty("Transmission")
+    private String transmission;
+
+    @JsonProperty("Mileage")
+    private Long mileage;
+
+    @JsonProperty("Doors")
+    private Integer doors;
+
+    @JsonProperty("Owner_Count")
+    private Integer ownerCount;
+
+    @JsonProperty("price")
     private BigDecimal price;
-    private String Brand;
-    private String Model;
+
+    @JsonProperty("Brand")
+    private String brand;
+
+    @JsonProperty("Model")
+    private String model;
 }

@@ -2,12 +2,14 @@ package com.example.cardealership.config;
 
 import com.example.cardealership.security.GoogleSuccessHandler;
 import com.example.cardealership.security.JwtAuthFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -21,7 +23,9 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.*;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Configuration
 @EnableMethodSecurity
@@ -33,6 +37,7 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final GoogleSuccessHandler googleSuccessHandler;
     private final CorsProperties corsProperties;
+    private final ObjectMapper objectMapper;
 
     @Bean
     AuthenticationManager authenticationManager(BCryptPasswordEncoder encoder) {
@@ -76,13 +81,22 @@ public class SecurityConfig {
                 )
                 .exceptionHandling(ex -> ex
                         .defaultAuthenticationEntryPointFor(
-                                new HttpStatusEntryPoint(org.springframework.http.HttpStatus.UNAUTHORIZED),
+                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
                                 request -> request.getRequestURI().startsWith("/api/")
                         )
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                             response.setContentType("application/json");
-                            response.getWriter().write("{\"message\":\"Forbidden\",\"fieldErrors\":null}");
+
+                            var body = Map.of(
+                                    "timestamp", Instant.now().toString(),
+                                    "status", 403,
+                                    "error", "Forbidden",
+                                    "message", "Forbidden",
+                                    "path", request.getRequestURI()
+                            );
+
+                            response.getWriter().write(objectMapper.writeValueAsString(body));
                         })
                 )
                 .oauth2Login(oauth -> oauth

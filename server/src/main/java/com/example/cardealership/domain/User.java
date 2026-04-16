@@ -2,8 +2,6 @@ package com.example.cardealership.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.EnumType;
 
 @Entity
 @Table(name = "users")
@@ -18,14 +16,17 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable=false, unique=true)
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable=false)
+    @Column(name = "password_hash")
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable=false)
+    @Column(nullable = false)
     private Role role;
-}
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "auth_provider", nullable = false)
+    private AuthProvider authProvider;
+}

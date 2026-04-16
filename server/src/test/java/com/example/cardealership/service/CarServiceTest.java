@@ -5,21 +5,20 @@ import com.example.cardealership.dto.CarDtos;
 import com.example.cardealership.repository.CarRepository;
 import com.example.cardealership.repository.ListingRepository;
 import com.example.cardealership.web.error.DuplicateVinException;
+import com.example.cardealership.web.error.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -124,15 +123,18 @@ class CarServiceTest {
         when(carRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> carService.findById(99L))
-                .isInstanceOf(NoSuchElementException.class)
-                .hasMessage("Car with id 99 was not found.");
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Car with id '99' was not found.");
     }
 
     @Test
     void deleteShouldRemoveListingsFirstAndThenCar() {
+        when(carRepository.existsById(5L)).thenReturn(true);
+
         carService.delete(5L);
 
-        verify(listingRepository).deleteByCar_Id(5L);
-        verify(carRepository).deleteById(5L);
+        InOrder inOrder = inOrder(listingRepository, carRepository);
+        inOrder.verify(listingRepository).deleteByCar_Id(5L);
+        inOrder.verify(carRepository).deleteById(5L);
     }
 }

@@ -1,18 +1,20 @@
 package com.example.cardealership.web.error;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import java.time.Instant;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -20,7 +22,10 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiError> handleValidation(
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request
+    ) {
         Map<String, String> errors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
@@ -30,12 +35,14 @@ public class GlobalExceptionHandler {
                         (a, b) -> a
                 ));
 
-        return ResponseEntity.badRequest()
-                .body(new ApiError("Validation failed", errors));
+        return build(HttpStatus.BAD_REQUEST, "Validation failed", request, errors);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ApiError> handleConstraint(ConstraintViolationException ex) {
+    public ResponseEntity<ApiError> handleConstraint(
+            ConstraintViolationException ex,
+            HttpServletRequest request
+    ) {
         Map<String, String> errors = ex.getConstraintViolations()
                 .stream()
                 .collect(Collectors.toMap(
@@ -44,59 +51,96 @@ public class GlobalExceptionHandler {
                         (a, b) -> a
                 ));
 
-        return ResponseEntity.badRequest()
-                .body(new ApiError("Validation failed", errors));
+        return build(HttpStatus.BAD_REQUEST, "Validation failed", request, errors);
     }
 
     @ExceptionHandler(DuplicateVinException.class)
-    public ResponseEntity<ApiError> handleDuplicateVin(DuplicateVinException ex) {
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(new ApiError(
-                        "Validation failed",
-                        Map.of("vin", ex.getMessage())
-                ));
+    public ResponseEntity<ApiError> handleDuplicateVin(
+            DuplicateVinException ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.CONFLICT, "Validation failed", request, Map.of("vin", ex.getMessage()));
     }
 
-    @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
-    public ResponseEntity<ApiError> handleBadCredentials() {
-        return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(new ApiError("Invalid email or password", null));
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<ApiError> handleEmailExists(
+            EmailAlreadyExistsException ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.CONFLICT, ex.getMessage(), request, null);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiError> handleNotFound(
+            ResourceNotFoundException ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.NOT_FOUND, ex.getMessage(), request, null);
+    }
+
+    @ExceptionHandler(BusinessValidationException.class)
+    public ResponseEntity<ApiError> handleBusinessValidation(
+            BusinessValidationException ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request, null);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ApiError> handleBadCredentials(
+            BadCredentialsException ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.UNAUTHORIZED, "Invalid email or password", request, null);
     }
 
     @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})
-    public ResponseEntity<ApiError> handleAccessDenied(Exception ex) {
-        return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body(new ApiError("Forbidden", null));
+    public ResponseEntity<ApiError> handleAccessDenied(
+            Exception ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.FORBIDDEN, "Forbidden", request, null);
     }
 
-    @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<ApiError> handleNotFound(NoSuchElementException ex) {
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(new ApiError(ex.getMessage(), null));
+    @ExceptionHandler(MlServiceUnavailableException.class)
+    public ResponseEntity<ApiError> handleMlUnavailable(
+            MlServiceUnavailableException ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), request, null);
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(new ApiError(ex.getMessage(), null));
-    }
-
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ApiError> handleIllegalState(IllegalStateException ex) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(new ApiError(ex.getMessage(), null));
+    @ExceptionHandler(MlPredictionException.class)
+    public ResponseEntity<ApiError> handleMlFailure(
+            MlPredictionException ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.BAD_GATEWAY, ex.getMessage(), request, null);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleOthers() {
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiError("Internal server error", null));
+    public ResponseEntity<ApiError> handleOthers(
+            Exception ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", request, null);
+    }
+
+    private ResponseEntity<ApiError> build(
+            HttpStatus status,
+            String message,
+            HttpServletRequest request,
+            Map<String, String> fieldErrors
+    ) {
+        ApiError body = ApiError.builder()
+                .timestamp(Instant.now())
+                .status(status.value())
+                .error(status.getReasonPhrase())
+                .message(message)
+                .path(request.getRequestURI())
+                .fieldErrors(fieldErrors)
+                .build();
+
+        return ResponseEntity.status(status).body(body);
     }
 }

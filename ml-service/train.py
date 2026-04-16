@@ -1,9 +1,11 @@
+import json
 import os
 import joblib
 import pandas as pd
 
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
@@ -11,6 +13,7 @@ from sklearn.preprocessing import OneHotEncoder
 DATA_PATH = "data/cars.csv"
 ARTIFACT_DIR = "artifacts"
 ARTIFACT_PATH = os.path.join(ARTIFACT_DIR, "car_price_pipeline.pkl")
+METADATA_PATH = os.path.join(ARTIFACT_DIR, "model_metadata.json")
 
 MODEL_FEATURES = [
     "Year",
@@ -23,6 +26,8 @@ MODEL_FEATURES = [
 ]
 
 TARGET_COLUMN = "Price"
+MODEL_VERSION = "1.1.0"
+SCHEMA_VERSION = "1"
 
 
 def main():
@@ -42,7 +47,7 @@ def main():
     )
 
     model = RandomForestRegressor(
-        n_estimators=200,
+        n_estimators=300,
         random_state=42
     )
 
@@ -56,15 +61,36 @@ def main():
     )
 
     pipeline.fit(x_train, y_train)
+    predictions = pipeline.predict(x_test)
+
+    mae = float(mean_absolute_error(y_test, predictions))
+    rmse = float(mean_squared_error(y_test, predictions) ** 0.5)
+    r2 = float(r2_score(y_test, predictions))
 
     os.makedirs(ARTIFACT_DIR, exist_ok=True)
     joblib.dump(pipeline, ARTIFACT_PATH)
 
-    score = pipeline.score(x_test, y_test)
+    metadata = {
+        "model_version": MODEL_VERSION,
+        "schema_version": SCHEMA_VERSION,
+        "target_column": TARGET_COLUMN,
+        "model_features": MODEL_FEATURES,
+        "metrics": {
+            "mae": round(mae, 4),
+            "rmse": round(rmse, 4),
+            "r2": round(r2, 4)
+        }
+    }
+
+    with open(METADATA_PATH, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, indent=2)
 
     print("Model trained successfully.")
-    print(f"Saved to: {ARTIFACT_PATH}")
-    print(f"R^2 on test set: {score:.4f}")
+    print(f"Saved model to: {ARTIFACT_PATH}")
+    print(f"Saved metadata to: {METADATA_PATH}")
+    print(f"MAE: {mae:.4f}")
+    print(f"RMSE: {rmse:.4f}")
+    print(f"R^2: {r2:.4f}")
 
 
 if __name__ == "__main__":

@@ -1,8 +1,11 @@
 package com.example.cardealership.service;
 
+import com.example.cardealership.domain.AuthProvider;
 import com.example.cardealership.domain.Role;
 import com.example.cardealership.domain.User;
 import com.example.cardealership.repository.UserRepository;
+import com.example.cardealership.web.error.EmailAlreadyExistsException;
+import com.example.cardealership.web.error.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,7 +14,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,6 +42,7 @@ class UserServiceTest {
                 .email("user@test.com")
                 .passwordHash("encoded-password")
                 .role(Role.USER)
+                .authProvider(AuthProvider.LOCAL)
                 .build();
     }
 
@@ -48,8 +51,7 @@ class UserServiceTest {
         when(repo.findByEmail("user@test.com")).thenReturn(Optional.of(regularUser));
 
         assertThatThrownBy(() -> userService.createUser("user@test.com", "secret123"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Email already exists");
+                .isInstanceOf(EmailAlreadyExistsException.class);
 
         verify(repo, never()).save(any(User.class));
     }
@@ -65,6 +67,7 @@ class UserServiceTest {
         assertThat(saved.getEmail()).isEqualTo("new@test.com");
         assertThat(saved.getPasswordHash()).isEqualTo("encoded-secret");
         assertThat(saved.getRole()).isEqualTo(Role.USER);
+        assertThat(saved.getAuthProvider()).isEqualTo(AuthProvider.LOCAL);
     }
 
     @Test
@@ -81,29 +84,30 @@ class UserServiceTest {
         when(repo.findByEmail("missing@test.com")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.findByEmail("missing@test.com"))
-                .isInstanceOf(NoSuchElementException.class);
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
-    void findOrCreateGoogleUserShouldPromoteExistingUserToUserRoleWhenNeeded() {
+    void findOrCreateGoogleUserShouldKeepExistingAdminRoleUntouched() {
         User adminUser = User.builder()
                 .id(2L)
                 .email("admin@test.com")
                 .passwordHash("hash")
                 .role(Role.ADMIN)
+                .authProvider(AuthProvider.LOCAL)
                 .build();
 
         when(repo.findByEmail("admin@test.com")).thenReturn(Optional.of(adminUser));
-        when(repo.save(adminUser)).thenReturn(adminUser);
 
         User result = userService.findOrCreateGoogleUser("admin@test.com");
 
-        assertThat(result.getRole()).isEqualTo(Role.USER);
-        verify(repo).save(adminUser);
+        assertThat(result.getRole()).isEqualTo(Role.ADMIN);
+        assertThat(result.getAuthProvider()).isEqualTo(AuthProvider.LOCAL);
+        verify(repo, never()).save(any(User.class));
     }
 
     @Test
-    void findOrCreateGoogleUserShouldCreateNewUserWhenMissing() {
+    void findOrCreateGoogleUserShouldCreateNewGoogleUserWhenMissing() {
         when(repo.findByEmail("google@test.com")).thenReturn(Optional.empty());
         when(repo.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -111,6 +115,7 @@ class UserServiceTest {
 
         assertThat(result.getEmail()).isEqualTo("google@test.com");
         assertThat(result.getRole()).isEqualTo(Role.USER);
-        assertThat(result.getPasswordHash()).isEqualTo("GOOGLE_AUTHORISATION");
+        assertThat(result.getAuthProvider()).isEqualTo(AuthProvider.GOOGLE);
+        assertThat(result.getPasswordHash()).isNull();
     }
 }

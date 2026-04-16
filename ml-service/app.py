@@ -1,20 +1,38 @@
 from flask import Flask, request, jsonify
+import json
 import joblib
 import pandas as pd
 import numpy as np
+from pathlib import Path
 
 app = Flask(__name__)
-model = joblib.load("artifacts/car_price_pipeline.pkl")
 
-MODEL_FEATURES = [
-    "Year",
-    "Engine_Size",
-    "Fuel_Type",
-    "Transmission",
-    "Mileage",
-    "Doors",
-    "Owner_Count",
-]
+ARTIFACT_DIR = Path("artifacts")
+MODEL_PATH = ARTIFACT_DIR / "car_price_pipeline.pkl"
+METADATA_PATH = ARTIFACT_DIR / "model_metadata.json"
+
+model = joblib.load(MODEL_PATH)
+
+if METADATA_PATH.exists():
+    with open(METADATA_PATH, "r", encoding="utf-8") as f:
+        MODEL_METADATA = json.load(f)
+else:
+    MODEL_METADATA = {
+        "model_version": "unknown",
+        "schema_version": "unknown",
+        "model_features": [
+            "Year",
+            "Engine_Size",
+            "Fuel_Type",
+            "Transmission",
+            "Mileage",
+            "Doors",
+            "Owner_Count",
+        ],
+        "metrics": {}
+    }
+
+MODEL_FEATURES = MODEL_METADATA["model_features"]
 
 
 def get_anomaly_data(real_price, predicted_price):
@@ -78,6 +96,28 @@ def explain(row):
     return ", ".join(reasons)
 
 
+def validate_record(record):
+    year = int(record.get("Year", 2018))
+    mileage = int(record.get("Mileage", 100000))
+    doors = int(record.get("Doors", 4))
+    owners = int(record.get("Owner_Count", 1))
+    engine_size = float(record.get("Engine_Size", 2.0))
+    price = float(record.get("price", 0.0))
+
+    if year < 1945 or year > 2100:
+        raise ValueError("Year must be between 1945 and 2100.")
+    if mileage < 0 or mileage > 2_000_000:
+        raise ValueError("Mileage must be between 0 and 2000000.")
+    if doors < 2 or doors > 6:
+        raise ValueError("Doors must be between 2 and 6.")
+    if owners < 0 or owners > 20:
+        raise ValueError("Owner_Count must be between 0 and 20.")
+    if engine_size <= 0 or engine_size > 10:
+        raise ValueError("Engine_Size must be greater than 0 and at most 10.")
+    if price < 0:
+        raise ValueError("price cannot be negative.")
+
+
 def sanitize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     if "Brand" not in df.columns:
         df["Brand"] = "UNKNOWN"
@@ -109,7 +149,11 @@ def sanitize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     for col in numeric_cols:
         df[col] = pd.to_numeric(df[col], errors="coerce").fillna(defaults.get(col, 0))
 
-    return df
+    records = df.to_dict(orient="records")
+    for record in records:
+        validate_record(record)
+
+    return pd.DataFrame(records)
 
 
 def to_native_types(records):
@@ -139,8 +183,10 @@ def predict():
             "predicted_price": round(float(predicted_price), 2)
         })
 
-    except Exception as e:
+    except ValueError as e:
         return jsonify({"error": str(e)}), 400
+    except Exception:
+        return jsonify({"error": "Prediction failed"}), 500
 
 
 @app.route("/recommend", methods=["POST"])
@@ -181,13 +227,24 @@ def recommend():
 
         return jsonify(result)
 
-    except Exception as e:
+    except ValueError as e:
         return jsonify({"error": str(e)}), 400
+    except Exception:
+        return jsonify({"error": "Recommendation failed"}), 500
+
+
+@app.route("/model-info", methods=["GET"])
+def model_info():
+    return jsonify(MODEL_METADATA)
 
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "UP"})
+    return jsonify({
+        "status": "UP",
+        "model_version": MODEL_METADATA.get("model_version"),
+        "schema_version": MODEL_METADATA.get("schema_version")
+    })
 
 
 if __name__ == "__main__":

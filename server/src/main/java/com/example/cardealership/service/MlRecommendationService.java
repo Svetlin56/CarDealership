@@ -4,15 +4,15 @@ import com.example.cardealership.domain.Car;
 import com.example.cardealership.dto.MlPredictionResponse;
 import com.example.cardealership.dto.MlRecommendationRequest;
 import com.example.cardealership.dto.MlRecommendationResponse;
+import com.example.cardealership.web.error.MlPredictionException;
+import com.example.cardealership.web.error.MlServiceUnavailableException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -26,15 +26,11 @@ public class MlRecommendationService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${ml.service.base-url:http://localhost:5000}")
+    @Value("${ml.service.base-url}")
     private String mlServiceBaseUrl;
 
     public List<MlRecommendationResponse> recommend(List<Car> cars) {
         try {
-            if (cars == null || cars.isEmpty()) {
-                return Collections.emptyList();
-            }
-
             List<MlRecommendationRequest> payload = cars.stream()
                     .map(this::mapCar)
                     .toList();
@@ -42,15 +38,13 @@ public class MlRecommendationService {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            HttpEntity<List<MlRecommendationRequest>> requestEntity =
-                    new HttpEntity<>(payload, headers);
+            HttpEntity<List<MlRecommendationRequest>> requestEntity = new HttpEntity<>(payload, headers);
 
             ResponseEntity<List<MlRecommendationResponse>> response = restTemplate.exchange(
                     mlServiceBaseUrl + "/recommend",
                     HttpMethod.POST,
                     requestEntity,
-                    new ParameterizedTypeReference<>() {
-                    }
+                    new ParameterizedTypeReference<>() {}
             );
 
             List<MlRecommendationResponse> body = response.getBody();
@@ -64,8 +58,10 @@ public class MlRecommendationService {
             ).reversed());
 
             return body;
-        } catch (Exception e) {
-            throw new RuntimeException("ML recommendation service failed", e);
+        } catch (ResourceAccessException ex) {
+            throw new MlServiceUnavailableException("ML recommendation service is unavailable.", ex);
+        } catch (RestClientException ex) {
+            throw new MlPredictionException("ML recommendation service returned an invalid response.", ex);
         }
     }
 
@@ -86,13 +82,15 @@ public class MlRecommendationService {
             );
 
             MlPredictionResponse body = response.getBody();
-            if (body == null) {
-                return null;
+            if (body == null || body.getPredictedPrice() == null) {
+                throw new MlPredictionException("ML price prediction response was empty.", null);
             }
 
             return body.getPredictedPrice();
-        } catch (Exception e) {
-            throw new RuntimeException("ML price prediction failed", e);
+        } catch (ResourceAccessException ex) {
+            throw new MlServiceUnavailableException("ML price prediction service is unavailable.", ex);
+        } catch (RestClientException ex) {
+            throw new MlPredictionException("ML price prediction failed.", ex);
         }
     }
 

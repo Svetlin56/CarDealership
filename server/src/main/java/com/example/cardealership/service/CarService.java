@@ -4,21 +4,20 @@ import com.example.cardealership.domain.Car;
 import com.example.cardealership.dto.CarDtos;
 import com.example.cardealership.repository.CarRepository;
 import com.example.cardealership.repository.ListingRepository;
+import com.example.cardealership.web.error.BusinessValidationException;
 import com.example.cardealership.web.error.DuplicateVinException;
+import com.example.cardealership.web.error.ResourceNotFoundException;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Set;
 
 @Service
@@ -40,16 +39,18 @@ public class CarService {
     private final ListingRepository listingRepository;
 
     public CarDtos.CarResponse create(CarDtos.CreateCarRequest req) {
-        if (req.getVin() != null && !req.getVin().isBlank() && carRepository.existsByVin(req.getVin())) {
+        validateBusinessRules(req);
+
+        if (carRepository.existsByVin(req.getVin())) {
             throw new DuplicateVinException(req.getVin());
         }
 
         Car car = Car.builder()
-                .make(req.getMake())
-                .model(req.getModel())
+                .make(req.getMake().trim())
+                .model(req.getModel().trim())
                 .prodYear(req.getYear())
                 .mileage(req.getMileage())
-                .vin(req.getVin())
+                .vin(req.getVin().trim().toUpperCase())
                 .price(req.getPrice())
                 .imageUrl(req.getImageUrl())
                 .engineSize(req.getEngineSize())
@@ -60,7 +61,6 @@ public class CarService {
                 .build();
 
         Car savedCar = carRepository.save(car);
-
         return CarDtos.CarResponse.from(savedCar);
     }
 
@@ -112,15 +112,47 @@ public class CarService {
 
     public CarDtos.CarResponse findById(Long id) {
         Car car = carRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Car with id " + id + " was not found."));
+                .orElseThrow(() -> new ResourceNotFoundException("Car", "id", id));
 
         return CarDtos.CarResponse.from(car);
     }
 
     @Transactional
     public void delete(Long id) {
+        if (!carRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Car", "id", id);
+        }
+
         listingRepository.deleteByCar_Id(id);
         carRepository.deleteById(id);
+    }
+
+    private void validateBusinessRules(CarDtos.CreateCarRequest req) {
+        int currentYear = Year.now().getValue();
+
+        if (req.getYear() != null && req.getYear() > currentYear) {
+            throw new BusinessValidationException("Production year cannot be in the future.");
+        }
+
+        if (req.getPrice() != null && req.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessValidationException("Price must be greater than zero.");
+        }
+
+        if (req.getMileage() != null && req.getMileage() > 2_000_000L) {
+            throw new BusinessValidationException("Mileage is unrealistically high.");
+        }
+
+        if (req.getOwnerCount() != null && req.getOwnerCount() > 20) {
+            throw new BusinessValidationException("Owner count is unrealistically high.");
+        }
+
+        if (req.getEngineSize() != null && req.getEngineSize().compareTo(BigDecimal.valueOf(10.0)) > 0) {
+            throw new BusinessValidationException("Engine size is unrealistically high.");
+        }
+
+        if (req.getYear() != null && req.getMileage() != null && req.getYear() >= currentYear - 1 && req.getMileage() > 300_000L) {
+            throw new BusinessValidationException("Mileage is too high for such a recent vehicle.");
+        }
     }
 
     private Specification<Car> buildSpecification(
@@ -193,7 +225,6 @@ public class CarService {
         if (value == null || value.isBlank()) {
             return null;
         }
-
         return value.trim();
     }
 
@@ -203,7 +234,6 @@ public class CarService {
         }
 
         String trimmed = sortBy.trim();
-
         return ALLOWED_SORT_FIELDS.contains(trimmed) ? trimmed : "id";
     }
 
@@ -215,7 +245,6 @@ public class CarService {
         if (value == null) {
             return null;
         }
-
         return Math.max(value, 0);
     }
 
@@ -223,7 +252,6 @@ public class CarService {
         if (value == null) {
             return null;
         }
-
         return value.signum() < 0 ? BigDecimal.ZERO : value;
     }
 }

@@ -3,6 +3,8 @@ package com.example.cardealership.web.error;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -10,16 +12,19 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+    private final ApiErrorFactory apiErrorFactory;
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(
@@ -35,7 +40,7 @@ public class GlobalExceptionHandler {
                         (a, b) -> a
                 ));
 
-        return build(HttpStatus.BAD_REQUEST, "Validation failed", request, errors);
+        return apiErrorFactory.build(HttpStatus.BAD_REQUEST, "Validation failed", request, errors);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -51,7 +56,7 @@ public class GlobalExceptionHandler {
                         (a, b) -> a
                 ));
 
-        return build(HttpStatus.BAD_REQUEST, "Validation failed", request, errors);
+        return apiErrorFactory.build(HttpStatus.BAD_REQUEST, "Validation failed", request, errors);
     }
 
     @ExceptionHandler(DuplicateVinException.class)
@@ -59,7 +64,7 @@ public class GlobalExceptionHandler {
             DuplicateVinException ex,
             HttpServletRequest request
     ) {
-        return build(HttpStatus.CONFLICT, "Validation failed", request, Map.of("vin", ex.getMessage()));
+        return apiErrorFactory.build(HttpStatus.CONFLICT, "Validation failed", request, Map.of("vin", ex.getMessage()));
     }
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
@@ -67,7 +72,7 @@ public class GlobalExceptionHandler {
             EmailAlreadyExistsException ex,
             HttpServletRequest request
     ) {
-        return build(HttpStatus.CONFLICT, ex.getMessage(), request, null);
+        return apiErrorFactory.build(HttpStatus.CONFLICT, ex.getMessage(), request, null);
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -75,7 +80,7 @@ public class GlobalExceptionHandler {
             ResourceNotFoundException ex,
             HttpServletRequest request
     ) {
-        return build(HttpStatus.NOT_FOUND, ex.getMessage(), request, null);
+        return apiErrorFactory.build(HttpStatus.NOT_FOUND, ex.getMessage(), request, null);
     }
 
     @ExceptionHandler(BusinessValidationException.class)
@@ -83,7 +88,7 @@ public class GlobalExceptionHandler {
             BusinessValidationException ex,
             HttpServletRequest request
     ) {
-        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request, null);
+        return apiErrorFactory.build(HttpStatus.BAD_REQUEST, ex.getMessage(), request, null);
     }
 
     @ExceptionHandler(BadCredentialsException.class)
@@ -91,7 +96,7 @@ public class GlobalExceptionHandler {
             BadCredentialsException ex,
             HttpServletRequest request
     ) {
-        return build(HttpStatus.UNAUTHORIZED, "Invalid email or password", request, null);
+        return apiErrorFactory.build(HttpStatus.UNAUTHORIZED, "Invalid email or password", request, null);
     }
 
     @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})
@@ -99,7 +104,7 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request
     ) {
-        return build(HttpStatus.FORBIDDEN, "Forbidden", request, null);
+        return apiErrorFactory.build(HttpStatus.FORBIDDEN, "Forbidden", request, null);
     }
 
     @ExceptionHandler(MlServiceUnavailableException.class)
@@ -107,7 +112,8 @@ public class GlobalExceptionHandler {
             MlServiceUnavailableException ex,
             HttpServletRequest request
     ) {
-        return build(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), request, null);
+        log.warn("ML service unavailable for path={}: {}", request.getRequestURI(), ex.getMessage());
+        return apiErrorFactory.build(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), request, null);
     }
 
     @ExceptionHandler(MlPredictionException.class)
@@ -115,7 +121,8 @@ public class GlobalExceptionHandler {
             MlPredictionException ex,
             HttpServletRequest request
     ) {
-        return build(HttpStatus.BAD_GATEWAY, ex.getMessage(), request, null);
+        log.warn("ML prediction failure for path={}: {}", request.getRequestURI(), ex.getMessage());
+        return apiErrorFactory.build(HttpStatus.BAD_GATEWAY, ex.getMessage(), request, null);
     }
 
     @ExceptionHandler(Exception.class)
@@ -123,24 +130,7 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request
     ) {
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", request, null);
-    }
-
-    private ResponseEntity<ApiError> build(
-            HttpStatus status,
-            String message,
-            HttpServletRequest request,
-            Map<String, String> fieldErrors
-    ) {
-        ApiError body = ApiError.builder()
-                .timestamp(Instant.now())
-                .status(status.value())
-                .error(status.getReasonPhrase())
-                .message(message)
-                .path(request.getRequestURI())
-                .fieldErrors(fieldErrors)
-                .build();
-
-        return ResponseEntity.status(status).body(body);
+        log.error("Unhandled exception for path={}", request.getRequestURI(), ex);
+        return apiErrorFactory.build(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", request, null);
     }
 }

@@ -8,6 +8,8 @@ import com.example.cardealership.dto.ListingDtos;
 import com.example.cardealership.repository.CarRepository;
 import com.example.cardealership.repository.ListingRepository;
 import com.example.cardealership.repository.UserRepository;
+import com.example.cardealership.web.error.InvalidListingStatusException;
+import com.example.cardealership.web.error.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -96,8 +98,8 @@ class ListingServiceTest {
         when(userRepo.findByEmail("missing@test.com")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> listingService.createByEmail("missing@test.com", request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("User not found");
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("User with email 'missing@test.com' was not found.");
     }
 
     @Test
@@ -109,8 +111,8 @@ class ListingServiceTest {
         when(carRepo.findById(10L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> listingService.createByEmail("seller@test.com", request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Car not found");
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Car with id '10' was not found.");
     }
 
     @Test
@@ -144,7 +146,7 @@ class ListingServiceTest {
         when(listingRepo.findById(100L)).thenReturn(Optional.of(listing));
 
         assertThatThrownBy(() -> listingService.updateStatus(100L, request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Invalid status value");
+                .isInstanceOf(InvalidListingStatusException.class)
+                .hasMessage("Invalid listing status: archived");
     }
 }

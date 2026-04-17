@@ -9,6 +9,7 @@ import com.example.cardealership.security.JwtAuthFilter;
 import com.example.cardealership.security.JwtService;
 import com.example.cardealership.service.EmailService;
 import com.example.cardealership.service.UserService;
+import com.example.cardealership.web.error.ApiErrorFactory;
 import com.example.cardealership.web.error.GlobalExceptionHandler;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletRequest;
@@ -37,7 +38,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
-@Import({SecurityConfig.class, GlobalExceptionHandler.class})
+@Import({SecurityConfig.class, GlobalExceptionHandler.class, ApiErrorFactory.class})
 class AuthControllerTest {
 
     @Autowired

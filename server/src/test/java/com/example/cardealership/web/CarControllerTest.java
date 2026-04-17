@@ -6,6 +6,7 @@ import com.example.cardealership.dto.CarDtos;
 import com.example.cardealership.security.GoogleSuccessHandler;
 import com.example.cardealership.security.JwtAuthFilter;
 import com.example.cardealership.service.CarService;
+import com.example.cardealership.web.error.ApiErrorFactory;
 import com.example.cardealership.web.error.GlobalExceptionHandler;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletRequest;
@@ -34,7 +35,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(CarController.class)
-@Import({SecurityConfig.class, GlobalExceptionHandler.class})
+@Import({SecurityConfig.class, GlobalExceptionHandler.class, ApiErrorFactory.class})
 class CarControllerTest {
 
     @Autowired
@@ -104,7 +105,8 @@ class CarControllerTest {
 
         when(carService.findAll(any(CarDtos.CarSearchRequest.class))).thenReturn(response);
 
-        mockMvc.perform(get("/api/v1/cars").with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("user@test.com").roles("USER")))
+        mockMvc.perform(get("/api/v1/cars")
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("user@test.com").roles("USER")))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
                 .andExpect(jsonPath("$.content[0].make").value("BMW"));

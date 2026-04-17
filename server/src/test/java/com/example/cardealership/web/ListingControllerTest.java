@@ -7,6 +7,7 @@ import com.example.cardealership.dto.ListingDtos;
 import com.example.cardealership.security.GoogleSuccessHandler;
 import com.example.cardealership.security.JwtAuthFilter;
 import com.example.cardealership.service.ListingService;
+import com.example.cardealership.web.error.ApiErrorFactory;
 import com.example.cardealership.web.error.GlobalExceptionHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
@@ -38,7 +39,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ListingController.class)
-@Import({SecurityConfig.class, GlobalExceptionHandler.class})
+@Import({SecurityConfig.class, GlobalExceptionHandler.class, ApiErrorFactory.class})
 class ListingControllerTest {
 
     @Autowired

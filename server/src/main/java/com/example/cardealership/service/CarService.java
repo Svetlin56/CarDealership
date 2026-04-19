@@ -37,6 +37,7 @@ public class CarService {
 
     private final CarRepository carRepository;
     private final ListingRepository listingRepository;
+    private final FileStorageService fileStorageService;
 
     public CarDtos.CarResponse create(CarDtos.CreateCarRequest req) {
         validateBusinessRules(req);
@@ -52,10 +53,10 @@ public class CarService {
                 .mileage(req.getMileage())
                 .vin(req.getVin().trim().toUpperCase())
                 .price(req.getPrice())
-                .imageUrl(req.getImageUrl())
+                .imageUrl(normalizeImageUrl(req.getImageUrl()))
                 .engineSize(req.getEngineSize())
-                .fuelType(req.getFuelType())
-                .transmission(req.getTransmission())
+                .fuelType(normalizeOptional(req.getFuelType()))
+                .transmission(normalizeOptional(req.getTransmission()))
                 .doors(req.getDoors())
                 .ownerCount(req.getOwnerCount())
                 .build();
@@ -119,12 +120,12 @@ public class CarService {
 
     @Transactional
     public void delete(Long id) {
-        if (!carRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Car", "id", id);
-        }
+        Car car = carRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Car", "id", id));
 
         listingRepository.deleteByCar_Id(id);
         carRepository.deleteById(id);
+        fileStorageService.deleteCarImage(car.getImageUrl());
     }
 
     private void validateBusinessRules(CarDtos.CreateCarRequest req) {
@@ -226,6 +227,14 @@ public class CarService {
             return null;
         }
         return value.trim();
+    }
+
+    private String normalizeOptional(String value) {
+        return normalize(value);
+    }
+
+    private String normalizeImageUrl(String imageUrl) {
+        return normalize(imageUrl);
     }
 
     private String normalizeSortBy(String sortBy) {

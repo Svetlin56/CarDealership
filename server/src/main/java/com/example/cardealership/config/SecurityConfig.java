@@ -73,6 +73,7 @@ public class SecurityConfig {
                                 "/api/v1/auth/**",
                                 "/oauth2/**",
                                 "/login/**",
+                                "/uploads/**",
                                 "/",
                                 "/index.html"
                         ).permitAll()

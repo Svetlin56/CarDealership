@@ -6,6 +6,7 @@ import com.example.cardealership.dto.CarDtos;
 import com.example.cardealership.security.GoogleSuccessHandler;
 import com.example.cardealership.security.JwtAuthFilter;
 import com.example.cardealership.service.CarService;
+import com.example.cardealership.service.FileStorageService;
 import com.example.cardealership.web.error.ApiErrorFactory;
 import com.example.cardealership.web.error.GlobalExceptionHandler;
 import jakarta.servlet.FilterChain;
@@ -43,6 +44,9 @@ class CarControllerTest {
 
     @MockBean
     private CarService carService;
+
+    @MockBean
+    private FileStorageService fileStorageService;
 
     @MockBean
     private JwtAuthFilter jwtAuthFilter;

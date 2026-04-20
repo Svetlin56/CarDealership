@@ -16,9 +16,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -32,6 +34,9 @@ class CarServiceTest {
 
     @Mock
     private ListingRepository listingRepository;
+
+    @Mock
+    private FileStorageService fileStorageService;
 
     @InjectMocks
     private CarService carService;
@@ -129,12 +134,18 @@ class CarServiceTest {
 
     @Test
     void deleteShouldRemoveListingsFirstAndThenCar() {
-        when(carRepository.existsById(5L)).thenReturn(true);
+        Car carToDelete = Car.builder()
+                .id(5L)
+                .imageUrl("/uploads/cars/test-image.jpg")
+                .build();
+
+        when(carRepository.findById(5L)).thenReturn(Optional.of(carToDelete));
 
         carService.delete(5L);
 
-        InOrder inOrder = inOrder(listingRepository, carRepository);
+        InOrder inOrder = inOrder(listingRepository, carRepository, fileStorageService);
         inOrder.verify(listingRepository).deleteByCar_Id(5L);
         inOrder.verify(carRepository).deleteById(5L);
+        inOrder.verify(fileStorageService).deleteCarImage("/uploads/cars/test-image.jpg");
     }
 }

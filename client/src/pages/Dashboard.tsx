@@ -88,6 +88,8 @@ export default function Dashboard() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [search, setSearch] = useState("");
     const [form, setForm] = useState<CreateCarForm>(INITIAL_FORM);
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     const brandOptions = useMemo(
         () =>
@@ -117,7 +119,7 @@ export default function Dashboard() {
                 page: 0,
                 size: 100,
                 sortBy: "id",
-                sortDir: "desc",
+                sortDir: "asc",
                 search: search || undefined
             }
         });
@@ -156,8 +158,42 @@ export default function Dashboard() {
         }));
     };
 
+    const onImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null;
+        setSelectedImage(file);
+
+        setErrors(prev => ({
+            ...prev,
+            imageUrl: ""
+        }));
+    };
+
     const resetForm = () => {
         setForm(INITIAL_FORM);
+        setSelectedImage(null);
+    };
+
+    const uploadImage = async (): Promise<string | null> => {
+        if (!selectedImage) {
+            return form.imageUrl?.trim() || null;
+        }
+
+        const formData = new FormData();
+        formData.append("file", selectedImage);
+
+        setUploadingImage(true);
+
+        try {
+            const response = await http.post<{ imageUrl: string }>("/cars/upload-image", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data"
+                }
+            });
+
+            return response.data.imageUrl;
+        } finally {
+            setUploadingImage(false);
+        }
     };
 
     const addCar = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -165,11 +201,14 @@ export default function Dashboard() {
         setErrors({});
 
         try {
+            const uploadedImageUrl = await uploadImage();
+
             await http.post("/cars", {
                 ...form,
                 year: Number(form.year),
                 mileage: Number(form.mileage),
                 price: Number(form.price),
+                imageUrl: uploadedImageUrl,
                 engineSize: form.engineSize ? Number(form.engineSize) : null
             });
 
@@ -180,6 +219,8 @@ export default function Dashboard() {
 
             if (apiErrors) {
                 setErrors(apiErrors);
+            } else if (err.response?.data?.message) {
+                setErrors({ general: err.response.data.message });
             }
         }
     };
@@ -283,14 +324,40 @@ export default function Dashboard() {
                         placeholder="e.g. 2.0"
                     />
 
+                    <div className="mb-3">
+                        <label className="form-label">Image file</label>
+                        <input
+                            type="file"
+                            className="form-control"
+                            accept=".jpg,.jpeg,.png,.webp,.gif"
+                            onChange={onImageChange}
+                        />
+                        <div className="form-text">
+                            Allowed: JPG, JPEG, PNG, WEBP, GIF. Max size: 5 MB.
+                        </div>
+                        {selectedImage && (
+                            <div className="form-text">
+                                Selected: {selectedImage.name}
+                            </div>
+                        )}
+                    </div>
+
                     <FormField
                         label="Image (URL)"
                         name="imageUrl"
                         value={form.imageUrl}
                         onChange={onChange}
+                        error={errors.imageUrl}
                     />
+
+                    {errors.general && (
+                        <div className="alert alert-danger py-2">{errors.general}</div>
+                    )}
+
                     {/* From Uiverse.io by cssbuttons-io */}
-                    <button className="save-button">Save</button>
+                    <button className="save-button" disabled={uploadingImage}>
+                        {uploadingImage ? "Uploading..." : "Save"}
+                    </button>
                 </form>
             </div>
 
@@ -317,9 +384,9 @@ export default function Dashboard() {
                         </tr>
                         </thead>
                         <tbody>
-                        {cars.map(c => (
+                        {cars.map((c, index) => (
                             <tr key={c.id}>
-                                <td>{c.id}</td>
+                                <td>{index + 1}</td>
                                 <td>
                                     {c.make} {c.model}
                                 </td>

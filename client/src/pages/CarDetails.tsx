@@ -8,6 +8,8 @@ type ApiErrorResponse = {
     fieldErrors?: Record<string, string>;
 };
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
 export default function CarDetails() {
     const { id } = useParams();
     const [car, setCar] = useState<Car | null>(null);
@@ -74,14 +76,20 @@ export default function CarDetails() {
         );
     }
 
+    const imageSrc = car.imageUrl
+        ? car.imageUrl.startsWith("http")
+            ? car.imageUrl
+            : `${API_BASE_URL}${car.imageUrl}`
+        : null;
+
     return (
         <div className="container mt-4">
             <div className="row g-4">
                 <div className="col-md-7">
-                    {car.imageUrl ? (
+                    {imageSrc ? (
                         <img
                             className="img-fluid rounded mb-3"
-                            src={car.imageUrl}
+                            src={imageSrc}
                             alt={`${car.make} ${car.model}`}
                         />
                     ) : (

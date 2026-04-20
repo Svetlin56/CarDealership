@@ -25,6 +25,11 @@ spring:
       adminEmail: ${ADMIN_EMAIL}
       adminPasswordHash: ${ADMIN_PASSWORD_HASH}
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
   mail:
     host: smtp.mail.bg
     port: 465
@@ -55,6 +60,8 @@ cors:
 
 app:
   frontend-url: http://localhost:5173
+  storage:
+    car-images-dir: server/uploads/cars
 
 ml:
   service:

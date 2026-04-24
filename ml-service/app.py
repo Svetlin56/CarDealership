@@ -7,32 +7,49 @@ from pathlib import Path
 
 app = Flask(__name__)
 
-ARTIFACT_DIR = Path("artifacts")
+BASE_DIR = Path(__file__).resolve().parent
+ARTIFACT_DIR = BASE_DIR / "artifacts"
 MODEL_PATH = ARTIFACT_DIR / "car_price_pipeline.pkl"
 METADATA_PATH = ARTIFACT_DIR / "model_metadata.json"
 
-model = joblib.load(MODEL_PATH)
+DEFAULT_MODEL_FEATURES = [
+    "Year",
+    "Engine_Size",
+    "Fuel_Type",
+    "Transmission",
+    "Mileage",
+    "Doors",
+    "Owner_Count",
+]
 
-if METADATA_PATH.exists():
+
+def load_metadata():
+    if not METADATA_PATH.exists():
+        return {
+            "model_version": "missing",
+            "schema_version": "missing",
+            "model_features": DEFAULT_MODEL_FEATURES,
+            "metrics": {},
+            "artifact_status": "missing_metadata"
+        }
+
     with open(METADATA_PATH, "r", encoding="utf-8") as f:
-        MODEL_METADATA = json.load(f)
-else:
-    MODEL_METADATA = {
-        "model_version": "unknown",
-        "schema_version": "unknown",
-        "model_features": [
-            "Year",
-            "Engine_Size",
-            "Fuel_Type",
-            "Transmission",
-            "Mileage",
-            "Doors",
-            "Owner_Count",
-        ],
-        "metrics": {}
-    }
+        return json.load(f)
 
-MODEL_FEATURES = MODEL_METADATA["model_features"]
+
+def load_model():
+    if not MODEL_PATH.exists():
+        raise RuntimeError(
+            f"Model artifact was not found at '{MODEL_PATH}'. "
+            "Run `python train.py` from the ml-service directory first."
+        )
+
+    return joblib.load(MODEL_PATH)
+
+
+MODEL_METADATA = load_metadata()
+MODEL_FEATURES = MODEL_METADATA.get("model_features", DEFAULT_MODEL_FEATURES)
+model = load_model()
 
 
 def get_anomaly_data(real_price, predicted_price):
@@ -185,8 +202,9 @@ def predict():
 
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
-    except Exception:
-        return jsonify({"error": "Prediction failed"}), 500
+    except Exception as e:
+        app.logger.exception("Prediction failed")
+        return jsonify({"error": "Prediction failed", "details": str(e)}), 500
 
 
 @app.route("/recommend", methods=["POST"])
@@ -229,8 +247,9 @@ def recommend():
 
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
-    except Exception:
-        return jsonify({"error": "Recommendation failed"}), 500
+    except Exception as e:
+        app.logger.exception("Recommendation failed")
+        return jsonify({"error": "Recommendation failed", "details": str(e)}), 500
 
 
 @app.route("/model-info", methods=["GET"])
@@ -242,10 +261,11 @@ def model_info():
 def health():
     return jsonify({
         "status": "UP",
+        "model_loaded": model is not None,
         "model_version": MODEL_METADATA.get("model_version"),
         "schema_version": MODEL_METADATA.get("schema_version")
     })
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=False, port=5000)

@@ -39,11 +39,19 @@ public class CarService {
     private final ListingRepository listingRepository;
     private final FileStorageService fileStorageService;
 
+    @Transactional
     public CarDtos.CarResponse create(CarDtos.CreateCarRequest req) {
-        validateBusinessRules(req);
+        validateBusinessRules(
+                req.getYear(),
+                req.getMileage(),
+                req.getPrice(),
+                req.getOwnerCount(),
+                req.getEngineSize()
+        );
 
-        if (carRepository.existsByVin(req.getVin())) {
-            throw new DuplicateVinException(req.getVin());
+        String normalizedVin = normalizeVin(req.getVin());
+        if (carRepository.existsByVin(normalizedVin)) {
+            throw new DuplicateVinException(normalizedVin);
         }
 
         Car car = Car.builder()
@@ -51,7 +59,7 @@ public class CarService {
                 .model(req.getModel().trim())
                 .prodYear(req.getYear())
                 .mileage(req.getMileage())
-                .vin(req.getVin().trim().toUpperCase())
+                .vin(normalizedVin)
                 .price(req.getPrice())
                 .imageUrl(normalizeImageUrl(req.getImageUrl()))
                 .engineSize(req.getEngineSize())
@@ -62,6 +70,49 @@ public class CarService {
                 .build();
 
         Car savedCar = carRepository.save(car);
+        return CarDtos.CarResponse.from(savedCar);
+    }
+
+    @Transactional
+    public CarDtos.CarResponse update(Long id, CarDtos.UpdateCarRequest req) {
+        Car car = carRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Car", "id", id));
+
+        validateBusinessRules(
+                req.getYear(),
+                req.getMileage(),
+                req.getPrice(),
+                req.getOwnerCount(),
+                req.getEngineSize()
+        );
+
+        String normalizedVin = normalizeVin(req.getVin());
+        if (carRepository.existsByVinAndIdNot(normalizedVin, id)) {
+            throw new DuplicateVinException(normalizedVin);
+        }
+
+        String oldImageUrl = car.getImageUrl();
+        String newImageUrl = normalizeImageUrl(req.getImageUrl());
+
+        car.setMake(req.getMake().trim());
+        car.setModel(req.getModel().trim());
+        car.setProdYear(req.getYear());
+        car.setMileage(req.getMileage());
+        car.setVin(normalizedVin);
+        car.setPrice(req.getPrice());
+        car.setImageUrl(newImageUrl);
+        car.setEngineSize(req.getEngineSize());
+        car.setFuelType(normalizeOptional(req.getFuelType()));
+        car.setTransmission(normalizeOptional(req.getTransmission()));
+        car.setDoors(req.getDoors());
+        car.setOwnerCount(req.getOwnerCount());
+
+        Car savedCar = carRepository.save(car);
+
+        if (oldImageUrl != null && !oldImageUrl.equals(newImageUrl)) {
+            fileStorageService.deleteCarImage(oldImageUrl);
+        }
+
         return CarDtos.CarResponse.from(savedCar);
     }
 
@@ -128,30 +179,36 @@ public class CarService {
         fileStorageService.deleteCarImage(car.getImageUrl());
     }
 
-    private void validateBusinessRules(CarDtos.CreateCarRequest req) {
+    private void validateBusinessRules(
+            Integer year,
+            Long mileage,
+            BigDecimal price,
+            Integer ownerCount,
+            BigDecimal engineSize
+    ) {
         int currentYear = Year.now().getValue();
 
-        if (req.getYear() != null && req.getYear() > currentYear) {
+        if (year != null && year > currentYear) {
             throw new BusinessValidationException("Production year cannot be in the future.");
         }
 
-        if (req.getPrice() != null && req.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+        if (price != null && price.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessValidationException("Price must be greater than zero.");
         }
 
-        if (req.getMileage() != null && req.getMileage() > 2_000_000L) {
+        if (mileage != null && mileage > 2_000_000L) {
             throw new BusinessValidationException("Mileage is unrealistically high.");
         }
 
-        if (req.getOwnerCount() != null && req.getOwnerCount() > 20) {
+        if (ownerCount != null && ownerCount > 20) {
             throw new BusinessValidationException("Owner count is unrealistically high.");
         }
 
-        if (req.getEngineSize() != null && req.getEngineSize().compareTo(BigDecimal.valueOf(10.0)) > 0) {
+        if (engineSize != null && engineSize.compareTo(BigDecimal.valueOf(10.0)) > 0) {
             throw new BusinessValidationException("Engine size is unrealistically high.");
         }
 
-        if (req.getYear() != null && req.getMileage() != null && req.getYear() >= currentYear - 1 && req.getMileage() > 300_000L) {
+        if (year != null && mileage != null && year >= currentYear - 1 && mileage > 300_000L) {
             throw new BusinessValidationException("Mileage is too high for such a recent vehicle.");
         }
     }
@@ -235,6 +292,10 @@ public class CarService {
 
     private String normalizeImageUrl(String imageUrl) {
         return normalize(imageUrl);
+    }
+
+    private String normalizeVin(String vin) {
+        return vin.trim().toUpperCase();
     }
 
     private String normalizeSortBy(String sortBy) {

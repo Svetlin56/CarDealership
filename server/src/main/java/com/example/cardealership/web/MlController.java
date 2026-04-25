@@ -5,6 +5,7 @@ import com.example.cardealership.dto.MlPredictionResponse;
 import com.example.cardealership.dto.MlRecommendationResponse;
 import com.example.cardealership.repository.CarRepository;
 import com.example.cardealership.service.MlRecommendationService;
+import com.example.cardealership.web.error.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/v1/ml")
@@ -32,7 +32,7 @@ public class MlController {
     @GetMapping("/predict/{id}")
     public MlPredictionResponse predictPrice(@PathVariable Long id) {
         Car car = carRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Car not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Car", "id", id));
 
         Double predictedPrice = mlRecommendationService.predict(car);
 

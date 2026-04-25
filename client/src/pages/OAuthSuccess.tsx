@@ -10,18 +10,17 @@ export default function OAuthSuccess() {
     useEffect(() => {
         const params = new URLSearchParams(window.location.hash.substring(1));
 
-        const token = params.get("token");
         const email = params.get("email");
         const picture = params.get("picture");
         const role = params.get("role");
 
-        if (!token) {
+        if (!email || !role) {
             navigate("/login", { replace: true });
             return;
         }
 
         const authData: AuthResponse = {
-            token,
+            token: null,
             email,
             picture,
             role

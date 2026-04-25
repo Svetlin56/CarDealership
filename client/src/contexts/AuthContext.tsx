@@ -6,11 +6,10 @@ import React, {
     useMemo,
     useState
 } from "react";
-import { API_BASE_URL, setAuthToken } from "../api/http";
+import { API_BASE_URL } from "../api/http";
 import type { AuthResponse, AuthUser } from "../types/auth";
 
 type AuthContextType = {
-    token: string | null;
     user: AuthUser | null;
     isAuthenticated: boolean;
     isAdmin: boolean;
@@ -22,13 +21,7 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const TOKEN_STORAGE_KEY = "token";
 const USER_STORAGE_KEY = "user";
-
-function getStoredToken(): string | null {
-    const token = localStorage.getItem(TOKEN_STORAGE_KEY);
-    return token && token.trim() ? token.trim() : null;
-}
 
 function getStoredUser(): AuthUser | null {
     const rawUser = localStorage.getItem(USER_STORAGE_KEY);
@@ -50,48 +43,20 @@ function getStoredUser(): AuthUser | null {
     }
 }
 
-function persistAuth(token: string, user: AuthUser) {
-    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+function persistUser(user: AuthUser) {
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
-    setAuthToken(token);
 }
 
 function clearPersistedAuth() {
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
     localStorage.removeItem(USER_STORAGE_KEY);
-    setAuthToken(null);
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [token, setToken] = useState<string | null>(null);
     const [user, setUser] = useState<AuthUser | null>(null);
     const [isInitializing, setIsInitializing] = useState(true);
 
     useEffect(() => {
-        const storedToken = getStoredToken();
-        const storedUser = getStoredUser();
-
-        if (storedToken) {
-            setAuthToken(storedToken);
-            setToken(storedToken);
-        }
-
-        if (storedUser) {
-            setUser(storedUser);
-        }
-
-        if (!storedToken || !storedUser) {
-            if (!storedToken && storedUser) {
-                localStorage.removeItem(USER_STORAGE_KEY);
-            }
-
-            if (storedToken && !storedUser) {
-                localStorage.removeItem(TOKEN_STORAGE_KEY);
-                setAuthToken(null);
-                setToken(null);
-            }
-        }
-
+        setUser(getStoredUser());
         setIsInitializing(false);
     }, []);
 
@@ -102,8 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             picture: authData.picture ?? null
         };
 
-        persistAuth(authData.token, normalizedUser);
-        setToken(authData.token);
+        persistUser(normalizedUser);
         setUser(normalizedUser);
     }, []);
 
@@ -121,17 +85,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.error("Logout request failed:", error);
         } finally {
             clearPersistedAuth();
-            setToken(null);
             setUser(null);
         }
     }, []);
 
     const value = useMemo<AuthContextType>(() => {
-        const isAuthenticated = Boolean(token && user);
+        const isAuthenticated = Boolean(user);
         const isAdmin = user?.role === "ADMIN";
 
         return {
-            token,
             user,
             isAuthenticated,
             isAdmin,
@@ -140,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             logout,
             completeOAuthLogin
         };
-    }, [token, user, isInitializing, login, logout, completeOAuthLogin]);
+    }, [user, isInitializing, login, logout, completeOAuthLogin]);
 
     return (
         <AuthContext.Provider value={value}>

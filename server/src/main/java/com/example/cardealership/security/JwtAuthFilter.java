@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -23,6 +24,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final AuthCookieService authCookieService;
 
     @Override
     protected void doFilterInternal(
@@ -43,21 +45,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        String authHeader = request.getHeader("Authorization");
+        Optional<String> token = extractBearerToken(request)
+                .or(() -> authCookieService.extractToken(request));
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (token.isEmpty()) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authHeader.substring(7);
-
         try {
-            String username = jwtService.extractUsername(token);
+            String username = jwtService.extractUsername(token.get());
             if (username != null) {
-
-                UserDetails userDetails =
-                        userDetailsService.loadUserByUsername(username);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(
@@ -72,7 +71,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
 
         } catch (Exception ex) {
-
             log.warn("Invalid JWT token: {}", ex.getMessage());
 
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
@@ -82,5 +80,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                   "message": "Invalid or expired token"
                 }""");
         }
+    }
+
+    private Optional<String> extractBearerToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return Optional.empty();
+        }
+
+        String token = authHeader.substring(7).trim();
+        return token.isBlank() ? Optional.empty() : Optional.of(token);
     }
 }

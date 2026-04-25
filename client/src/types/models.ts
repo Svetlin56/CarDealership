@@ -4,6 +4,7 @@ export type Car = {
     model: string;
     year: number;
     mileage?: number;
+    vin?: string;
     price: number;
     imageUrl?: string;
     engineSize?: number;

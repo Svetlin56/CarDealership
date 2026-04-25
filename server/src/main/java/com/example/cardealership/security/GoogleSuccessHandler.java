@@ -23,6 +23,7 @@ public class GoogleSuccessHandler implements AuthenticationSuccessHandler {
 
     private final JwtService jwtService;
     private final UserService userService;
+    private final AuthCookieService authCookieService;
 
     @Override
     public void onAuthenticationSuccess(
@@ -42,12 +43,11 @@ public class GoogleSuccessHandler implements AuthenticationSuccessHandler {
         }
 
         var user = userService.findOrCreateGoogleUser(email);
-
         String token = jwtService.generateToken(user.getEmail(), user.getRole().name());
+        authCookieService.writeAuthCookie(response, token);
 
         String redirectUrl = frontendUrl + "/oauth-success"
-                + "#token=" + encode(token)
-                + "&email=" + encode(user.getEmail())
+                + "#email=" + encode(user.getEmail())
                 + "&role=" + encode(user.getRole().name())
                 + "&picture=" + encode(picture == null ? "" : picture);
 

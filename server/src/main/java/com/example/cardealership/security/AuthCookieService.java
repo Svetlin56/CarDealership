@@ -3,10 +3,9 @@ package com.example.cardealership.security;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -15,37 +14,38 @@ public class AuthCookieService {
 
     public static final String AUTH_COOKIE_NAME = "cd_auth_token";
 
-    @Value("${app.auth.cookie.secure:false}")
-    private boolean secureCookie;
-
-    @Value("${app.auth.cookie.same-site:Lax}")
-    private String sameSite;
-
-    @Value("${app.auth.cookie.max-age-seconds:86400}")
-    private long maxAgeSeconds;
+    private static final int COOKIE_MAX_AGE_SECONDS = (int) Duration.ofDays(1).toSeconds();
 
     public void writeAuthCookie(HttpServletResponse response, String token) {
-        ResponseCookie cookie = ResponseCookie.from(AUTH_COOKIE_NAME, token)
-                .httpOnly(true)
-                .secure(secureCookie)
-                .path("/")
-                .sameSite(sameSite)
-                .maxAge(maxAgeSeconds)
-                .build();
+        Cookie cookie = new Cookie(AUTH_COOKIE_NAME, token);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false);
+        cookie.setPath("/");
+        cookie.setMaxAge(COOKIE_MAX_AGE_SECONDS);
 
-        response.addHeader("Set-Cookie", cookie.toString());
+        response.addCookie(cookie);
+
+        response.addHeader(
+                "Set-Cookie",
+                AUTH_COOKIE_NAME + "=" + token +
+                        "; Path=/; Max-Age=" + COOKIE_MAX_AGE_SECONDS +
+                        "; HttpOnly; SameSite=Lax"
+        );
     }
 
     public void clearAuthCookie(HttpServletResponse response) {
-        ResponseCookie cookie = ResponseCookie.from(AUTH_COOKIE_NAME, "")
-                .httpOnly(true)
-                .secure(secureCookie)
-                .path("/")
-                .sameSite(sameSite)
-                .maxAge(0)
-                .build();
+        Cookie cookie = new Cookie(AUTH_COOKIE_NAME, "");
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
 
-        response.addHeader("Set-Cookie", cookie.toString());
+        response.addCookie(cookie);
+
+        response.addHeader(
+                "Set-Cookie",
+                AUTH_COOKIE_NAME + "=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax"
+        );
     }
 
     public Optional<String> extractToken(HttpServletRequest request) {

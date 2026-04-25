@@ -5,27 +5,28 @@ export const API_BASE_URL =
 
 const http = axios.create({
     baseURL: `${API_BASE_URL}/api/v1`,
-    headers: { "Content-Type": "application/json" },
+    headers: {
+        "Content-Type": "application/json"
+    },
     withCredentials: true
 });
 
-export function setAuthToken(token: string | null) {
-    if (token && token.trim()) {
-        const normalizedToken = token.trim();
-        http.defaults.headers.common.Authorization = `Bearer ${normalizedToken}`;
-    } else {
-        delete http.defaults.headers.common.Authorization;
+http.interceptors.response.use(
+    response => response,
+    error => {
+        const status = error?.response?.status;
+
+        if (status === 401 || status === 403) {
+            const currentPath = window.location.pathname;
+            const isAuthPage = currentPath === "/login" || currentPath === "/register";
+
+            if (!isAuthPage) {
+                localStorage.removeItem("user");
+            }
+        }
+
+        return Promise.reject(error);
     }
-}
-
-http.interceptors.request.use(config => {
-    const token = localStorage.getItem("token");
-
-    if (token && token.trim()) {
-        config.headers.Authorization = `Bearer ${token.trim()}`;
-    }
-
-    return config;
-});
+);
 
 export default http;

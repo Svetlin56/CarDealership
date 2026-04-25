@@ -4,6 +4,7 @@ import com.example.cardealership.config.CorsProperties;
 import com.example.cardealership.config.SecurityConfig;
 import com.example.cardealership.domain.Role;
 import com.example.cardealership.domain.User;
+import com.example.cardealership.security.AuthCookieService;
 import com.example.cardealership.security.GoogleSuccessHandler;
 import com.example.cardealership.security.JwtAuthFilter;
 import com.example.cardealership.security.JwtService;
@@ -55,6 +56,9 @@ class AuthControllerTest {
 
     @MockBean
     private EmailService emailService;
+
+    @MockBean
+    private AuthCookieService authCookieService;
 
     @MockBean
     private JwtAuthFilter jwtAuthFilter;
@@ -112,6 +116,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.role").value("USER"));
 
         verify(emailService).sendRegistrationEmail("user@test.com");
+        verify(authCookieService).writeAuthCookie(any(), any());
     }
 
     @Test
@@ -138,6 +143,8 @@ class AuthControllerTest {
                 .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
                 .andExpect(jsonPath("$.token").value("admin-token"))
                 .andExpect(jsonPath("$.role").value("ADMIN"));
+
+        verify(authCookieService).writeAuthCookie(any(), any());
     }
 
     @Test

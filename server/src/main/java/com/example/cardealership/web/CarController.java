@@ -40,6 +40,15 @@ public class CarController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CarDtos.CarResponse> update(
+            @PathVariable Long id,
+            @Valid @RequestBody CarDtos.UpdateCarRequest request
+    ) {
+        return ResponseEntity.ok(service.update(id, request));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(value = "/upload-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> uploadImage(@RequestPart("file") MultipartFile file) {
         String imageUrl = fileStorageService.storeCarImage(file);

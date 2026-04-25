@@ -5,6 +5,8 @@ import com.example.cardealership.domain.Listing;
 import com.example.cardealership.dto.InquiryDtos;
 import com.example.cardealership.repository.InquiryRepository;
 import com.example.cardealership.repository.ListingRepository;
+import com.example.cardealership.web.error.BusinessValidationException;
+import com.example.cardealership.web.error.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,10 +21,10 @@ public class InquiryService {
     public InquiryDtos.InquiryResponse create(Long listingId, InquiryDtos.InquiryRequest req) {
 
         Listing listing = listingRepo.findById(listingId)
-                .orElseThrow(() -> new IllegalArgumentException("Listing not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Listing", "id", listingId));
 
         if (listing.getStatus() != Listing.Status.ACTIVE) {
-            throw new IllegalStateException("Cannot send inquiry for inactive listing");
+            throw new BusinessValidationException("Cannot send inquiry for inactive listing.");
         }
 
         Inquiry inquiry = Inquiry.builder()

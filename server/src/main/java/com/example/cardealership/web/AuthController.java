@@ -2,11 +2,11 @@ package com.example.cardealership.web;
 
 import com.example.cardealership.domain.User;
 import com.example.cardealership.dto.AuthDtos.*;
+import com.example.cardealership.security.AuthCookieService;
 import com.example.cardealership.security.JwtService;
 import com.example.cardealership.service.EmailService;
 import com.example.cardealership.service.UserService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -27,9 +27,13 @@ public class AuthController {
     private final JwtService jwtService;
     private final UserService userService;
     private final EmailService emailService;
+    private final AuthCookieService authCookieService;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest req) {
+    public ResponseEntity<AuthResponse> register(
+            @Valid @RequestBody RegisterRequest req,
+            HttpServletResponse response
+    ) {
         User u = userService.createUser(req.getEmail(), req.getPassword());
 
         try {
@@ -39,27 +43,29 @@ public class AuthController {
         }
 
         String token = jwtService.generateToken(u.getEmail(), u.getRole().name());
+        authCookieService.writeAuthCookie(response, token);
+
         return ResponseEntity.ok(new AuthResponse(token, u.getEmail(), u.getRole().name(), null));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest req) {
+    public ResponseEntity<AuthResponse> login(
+            @Valid @RequestBody LoginRequest req,
+            HttpServletResponse response
+    ) {
         Authentication auth = new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword());
         authManager.authenticate(auth);
 
         User u = userService.findByEmail(req.getEmail());
         String token = jwtService.generateToken(u.getEmail(), u.getRole().name());
+        authCookieService.writeAuthCookie(response, token);
 
         return ResponseEntity.ok(new AuthResponse(token, u.getEmail(), u.getRole().name(), null));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
-        }
-
+    public ResponseEntity<Void> logout(HttpServletResponse response) {
+        authCookieService.clearAuthCookie(response);
         return ResponseEntity.ok().build();
     }
 }

@@ -8,6 +8,7 @@ import com.example.cardealership.dto.ListingDtos;
 import com.example.cardealership.repository.CarRepository;
 import com.example.cardealership.repository.ListingRepository;
 import com.example.cardealership.repository.UserRepository;
+import com.example.cardealership.web.error.BusinessValidationException;
 import com.example.cardealership.web.error.InvalidListingStatusException;
 import com.example.cardealership.web.error.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +25,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -61,6 +64,7 @@ class ListingServiceTest {
                 .prodYear(2019)
                 .price(new BigDecimal("19999"))
                 .vin("WAU12345678901234")
+                .deleted(false)
                 .build();
 
         listing = Listing.builder()
@@ -79,7 +83,8 @@ class ListingServiceTest {
         request.setDescription("Clean car");
 
         when(userRepo.findByEmail("seller@test.com")).thenReturn(Optional.of(seller));
-        when(carRepo.findById(10L)).thenReturn(Optional.of(car));
+        when(carRepo.findByIdAndDeletedFalse(10L)).thenReturn(Optional.of(car));
+        when(listingRepo.existsByCar_IdAndStatus(10L, Listing.Status.ACTIVE)).thenReturn(false);
         when(listingRepo.save(any(Listing.class))).thenReturn(listing);
 
         ListingDtos.ListingResponse response = listingService.createByEmail("seller@test.com", request);
@@ -100,6 +105,9 @@ class ListingServiceTest {
         assertThatThrownBy(() -> listingService.createByEmail("missing@test.com", request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("User with email 'missing@test.com' was not found.");
+
+        verify(carRepo, never()).findByIdAndDeletedFalse(any());
+        verify(listingRepo, never()).save(any(Listing.class));
     }
 
     @Test
@@ -108,21 +116,86 @@ class ListingServiceTest {
         request.setCarId(10L);
 
         when(userRepo.findByEmail("seller@test.com")).thenReturn(Optional.of(seller));
-        when(carRepo.findById(10L)).thenReturn(Optional.empty());
+        when(carRepo.findByIdAndDeletedFalse(10L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> listingService.createByEmail("seller@test.com", request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Car with id '10' was not found.");
+
+        verify(listingRepo, never()).save(any(Listing.class));
     }
 
     @Test
-    void allShouldMapRepositoryResults() {
-        when(listingRepo.findAll()).thenReturn(List.of(listing));
+    void createByEmailShouldFailWhenActiveListingAlreadyExists() {
+        ListingDtos.CreateListingRequest request = new ListingDtos.CreateListingRequest();
+        request.setCarId(10L);
+
+        when(userRepo.findByEmail("seller@test.com")).thenReturn(Optional.of(seller));
+        when(carRepo.findByIdAndDeletedFalse(10L)).thenReturn(Optional.of(car));
+        when(listingRepo.existsByCar_IdAndStatus(10L, Listing.Status.ACTIVE)).thenReturn(true);
+
+        assertThatThrownBy(() -> listingService.createByEmail("seller@test.com", request))
+                .isInstanceOf(BusinessValidationException.class)
+                .hasMessage("This car already has an active listing.");
+
+        verify(listingRepo, never()).save(any(Listing.class));
+    }
+
+    @Test
+    void allShouldMapOnlyActiveListings() {
+        when(listingRepo.findAllByStatus(Listing.Status.ACTIVE)).thenReturn(List.of(listing));
 
         List<ListingDtos.ListingResponse> response = listingService.all();
 
         assertThat(response).hasSize(1);
+        assertThat(response.getFirst().getId()).isEqualTo(100L);
         assertThat(response.getFirst().getDescription()).isEqualTo("Clean car");
+        assertThat(response.getFirst().getStatus()).isEqualTo("ACTIVE");
+    }
+
+    @Test
+    void getShouldReturnActiveListingById() {
+        when(listingRepo.findByIdAndStatus(100L, Listing.Status.ACTIVE))
+                .thenReturn(Optional.of(listing));
+
+        ListingDtos.ListingResponse response = listingService.get(100L);
+
+        assertThat(response.getId()).isEqualTo(100L);
+        assertThat(response.getStatus()).isEqualTo("ACTIVE");
+    }
+
+    @Test
+    void getShouldThrowWhenActiveListingMissing() {
+        when(listingRepo.findByIdAndStatus(404L, Listing.Status.ACTIVE))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> listingService.get(404L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Listing with id '404' was not found.");
+    }
+
+    @Test
+    void getActiveByCarIdShouldReturnActiveListing() {
+        when(listingRepo.findFirstByCar_IdAndStatus(10L, Listing.Status.ACTIVE))
+                .thenReturn(Optional.of(listing));
+
+        ListingDtos.ListingResponse response = listingService.getActiveByCarId(10L);
+
+        assertThat(response.getId()).isEqualTo(100L);
+        assertThat(response.getCar().getId()).isEqualTo(10L);
+        assertThat(response.getStatus()).isEqualTo("ACTIVE");
+    }
+
+    @Test
+    void getActiveByCarIdShouldThrowWhenCarIsSoftDeleted() {
+        car.setDeleted(true);
+
+        when(listingRepo.findFirstByCar_IdAndStatus(10L, Listing.Status.ACTIVE))
+                .thenReturn(Optional.of(listing));
+
+        assertThatThrownBy(() -> listingService.getActiveByCarId(10L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Listing with carId '10' was not found.");
     }
 
     @Test
@@ -136,6 +209,7 @@ class ListingServiceTest {
         ListingDtos.ListingResponse response = listingService.updateStatus(100L, request);
 
         assertThat(response.getStatus()).isEqualTo("SOLD");
+        assertThat(listing.getStatus()).isEqualTo(Listing.Status.SOLD);
     }
 
     @Test
@@ -148,5 +222,21 @@ class ListingServiceTest {
         assertThatThrownBy(() -> listingService.updateStatus(100L, request))
                 .isInstanceOf(InvalidListingStatusException.class)
                 .hasMessage("Invalid listing status: archived");
+    }
+
+    @Test
+    void updateStatusShouldNotActivateListingForDeletedCar() {
+        car.setDeleted(true);
+
+        ListingDtos.UpdateListingStatusRequest request = new ListingDtos.UpdateListingStatusRequest();
+        request.setStatus("ACTIVE");
+
+        when(listingRepo.findById(100L)).thenReturn(Optional.of(listing));
+
+        assertThatThrownBy(() -> listingService.updateStatus(100L, request))
+                .isInstanceOf(BusinessValidationException.class)
+                .hasMessage("Cannot activate a listing for a deleted car.");
+
+        verify(listingRepo, never()).save(any(Listing.class));
     }
 }

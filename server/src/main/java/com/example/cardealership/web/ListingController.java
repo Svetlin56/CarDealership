@@ -23,6 +23,11 @@ public class ListingController {
         return service.all();
     }
 
+    @GetMapping("/by-car/{carId}")
+    public ListingDtos.ListingResponse getByCarId(@PathVariable("carId") Long carId) {
+        return service.getActiveByCarId(carId);
+    }
+
     @GetMapping("/{id}")
     public ListingDtos.ListingResponse get(@PathVariable("id") Long id) {
         return service.get(id);

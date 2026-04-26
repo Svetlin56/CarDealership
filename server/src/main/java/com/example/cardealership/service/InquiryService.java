@@ -7,8 +7,11 @@ import com.example.cardealership.repository.InquiryRepository;
 import com.example.cardealership.repository.ListingRepository;
 import com.example.cardealership.web.error.BusinessValidationException;
 import com.example.cardealership.web.error.ResourceNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -18,21 +21,21 @@ public class InquiryService {
     private final ListingRepository listingRepo;
     private final EmailService emailService;
 
+    @Transactional
     public InquiryDtos.InquiryResponse create(Long listingId, InquiryDtos.InquiryRequest req) {
-
-        Listing listing = listingRepo.findById(listingId)
+        Listing listing = listingRepo.findByIdAndStatus(listingId, Listing.Status.ACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException("Listing", "id", listingId));
 
-        if (listing.getStatus() != Listing.Status.ACTIVE) {
-            throw new BusinessValidationException("Cannot send inquiry for inactive listing.");
+        if (listing.getCar().isDeleted()) {
+            throw new BusinessValidationException("Cannot send inquiry for a deleted car.");
         }
 
         Inquiry inquiry = Inquiry.builder()
                 .listing(listing)
-                .name(req.getName())
-                .email(req.getEmail())
-                .phone(req.getPhone())
-                .message(req.getMessage())
+                .name(normalizeRequired(req.getName()))
+                .email(normalizeEmail(req.getEmail()))
+                .phone(normalizeRequired(req.getPhone()))
+                .message(normalizeOptional(req.getMessage()))
                 .build();
 
         Inquiry saved = inquiryRepo.save(inquiry);
@@ -40,9 +43,9 @@ public class InquiryService {
         emailService.sendInquiry(
                 listing.getSeller().getEmail(),
                 "New inquiry for your listing",
-                "You have a new inquiry from " + req.getName() +
-                        " (" + req.getEmail() + ", " + req.getPhone() + ")\n\n" +
-                        req.getMessage()
+                "You have a new inquiry from " + saved.getName() +
+                        " (" + saved.getEmail() + ", " + saved.getPhone() + ")\n\n" +
+                        (saved.getMessage() == null ? "" : saved.getMessage())
         );
 
         return new InquiryDtos.InquiryResponse(
@@ -53,5 +56,20 @@ public class InquiryService {
                 saved.getPhone(),
                 saved.getMessage()
         );
+    }
+
+    private String normalizeEmail(String email) {
+        return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizeRequired(String value) {
+        return value == null ? null : value.trim();
+    }
+
+    private String normalizeOptional(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 }

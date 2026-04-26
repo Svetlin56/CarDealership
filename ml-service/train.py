@@ -16,6 +16,8 @@ ARTIFACT_PATH = os.path.join(ARTIFACT_DIR, "car_price_pipeline.pkl")
 METADATA_PATH = os.path.join(ARTIFACT_DIR, "model_metadata.json")
 
 MODEL_FEATURES = [
+    "Brand",
+    "Model",
     "Year",
     "Engine_Size",
     "Fuel_Type",
@@ -26,8 +28,8 @@ MODEL_FEATURES = [
 ]
 
 TARGET_COLUMN = "Price"
-MODEL_VERSION = "1.1.0"
-SCHEMA_VERSION = "1"
+MODEL_VERSION = "1.2.0"
+SCHEMA_VERSION = "2"
 
 
 def main():
@@ -36,7 +38,7 @@ def main():
     x = df[MODEL_FEATURES]
     y = df[TARGET_COLUMN]
 
-    categorical = ["Fuel_Type", "Transmission"]
+    categorical = ["Brand", "Model", "Fuel_Type", "Transmission"]
     numerical = ["Year", "Engine_Size", "Mileage", "Doors", "Owner_Count"]
 
     preprocessor = ColumnTransformer(

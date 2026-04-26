@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -18,12 +20,14 @@ public class UserService {
     private final PasswordEncoder encoder;
 
     public User createUser(String email, String rawPassword) {
-        if (repo.findByEmail(email).isPresent()) {
-            throw new EmailAlreadyExistsException(email);
+        String normalizedEmail = normalizeEmail(email);
+
+        if (repo.findByEmail(normalizedEmail).isPresent()) {
+            throw new EmailAlreadyExistsException(normalizedEmail);
         }
 
         User user = User.builder()
-                .email(email.trim().toLowerCase())
+                .email(normalizedEmail)
                 .passwordHash(encoder.encode(rawPassword))
                 .role(Role.USER)
                 .authProvider(AuthProvider.LOCAL)
@@ -33,12 +37,14 @@ public class UserService {
     }
 
     public User findByEmail(String email) {
-        return repo.findByEmail(email.trim().toLowerCase())
-                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+        String normalizedEmail = normalizeEmail(email);
+
+        return repo.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", normalizedEmail));
     }
 
     public User findOrCreateGoogleUser(String email) {
-        String normalizedEmail = email.trim().toLowerCase();
+        String normalizedEmail = normalizeEmail(email);
 
         return repo.findByEmail(normalizedEmail)
                 .orElseGet(() -> repo.save(
@@ -49,5 +55,9 @@ public class UserService {
                                 .authProvider(AuthProvider.GOOGLE)
                                 .build()
                 ));
+    }
+
+    private String normalizeEmail(String email) {
+        return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
     }
 }

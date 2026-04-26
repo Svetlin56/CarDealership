@@ -26,6 +26,32 @@ export type CarPageResponse = {
     sortDir: string;
 };
 
+export type SellerSummary = {
+    id: number;
+    email: string;
+};
+
+export type Listing = {
+    id: number;
+    description?: string;
+    status: "ACTIVE" | "SOLD" | "HIDDEN";
+    createdAt: string;
+    car: Car;
+    seller: SellerSummary;
+};
+
+export type InquiryRequest = {
+    name: string;
+    email: string;
+    phone: string;
+    message: string;
+};
+
+export type InquiryResponse = InquiryRequest & {
+    id: number;
+    listingId: number;
+};
+
 export type MlRecommendationApiResponse = {
     Year: number;
     Engine_Size: number;

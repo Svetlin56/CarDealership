@@ -3,7 +3,12 @@ import { Link } from "react-router-dom";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-export default function CarCard({ car }: { car: Car }) {
+type CarCardProps = {
+    car: Car;
+    detailsPath?: string;
+};
+
+export default function CarCard({ car, detailsPath }: CarCardProps) {
     const imageSrc = car.imageUrl
         ? car.imageUrl.startsWith("http")
             ? car.imageUrl
@@ -25,7 +30,9 @@ export default function CarCard({ car }: { car: Car }) {
                 <p className="card-text">{car.year} • {car.mileage?.toLocaleString()} km</p>
                 <div className="mt-auto d-flex justify-content-between align-items-center">
                     <strong>{car.price.toLocaleString()} €</strong>
-                    <Link to={`/cars/${car.id}`} className="btn btn-primary">Details</Link>
+                    <Link to={detailsPath ?? `/cars/${car.id}`} className="btn btn-primary">
+                        Details
+                    </Link>
                 </div>
             </div>
         </div>

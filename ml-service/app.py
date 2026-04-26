@@ -13,6 +13,8 @@ MODEL_PATH = ARTIFACT_DIR / "car_price_pipeline.pkl"
 METADATA_PATH = ARTIFACT_DIR / "model_metadata.json"
 
 DEFAULT_MODEL_FEATURES = [
+    "Brand",
+    "Model",
     "Year",
     "Engine_Size",
     "Fuel_Type",
@@ -221,8 +223,14 @@ def recommend():
         df["predicted_price"] = model.predict(df[MODEL_FEATURES]).round(2)
         df["score"] = df.apply(calculate_score, axis=1)
 
+        df["deal_ratio"] = np.where(
+            df["predicted_price"] > 0,
+            (df["predicted_price"] - df["price"]) / df["predicted_price"],
+            0.0
+        )
+
         df["value_score"] = (
-                (df["predicted_price"] - df["price"]) * 0.7 +
+                df["deal_ratio"] * 70 +
                 df["score"] * 0.3
         )
 

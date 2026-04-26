@@ -1,30 +1,55 @@
 {
   "model_name": "car_price_prediction",
-  "version": "1.0",
+  "version": "2.0",
   "features": [
     {
-      "name": "make",
+      "name": "Brand",
       "type": "string",
-      "description": "Car manufacturer"
+      "description": "Car manufacturer. Included as a categorical model feature."
     },
     {
-      "name": "model",
+      "name": "Model",
       "type": "string",
-      "description": "Car model"
+      "description": "Car model. Included as a categorical model feature."
     },
     {
-      "name": "year",
+      "name": "Year",
       "type": "integer",
       "description": "Production year"
     },
     {
-      "name": "mileage",
+      "name": "Engine_Size",
+      "type": "number",
+      "description": "Engine size in liters"
+    },
+    {
+      "name": "Fuel_Type",
+      "type": "string",
+      "description": "Fuel type"
+    },
+    {
+      "name": "Transmission",
+      "type": "string",
+      "description": "Transmission type"
+    },
+    {
+      "name": "Mileage",
       "type": "integer",
       "description": "Mileage in kilometers"
+    },
+    {
+      "name": "Doors",
+      "type": "integer",
+      "description": "Number of doors"
+    },
+    {
+      "name": "Owner_Count",
+      "type": "integer",
+      "description": "Number of previous owners"
     }
   ],
   "target": {
-    "name": "price",
+    "name": "Price",
     "type": "number",
     "description": "Car price in EUR"
   }

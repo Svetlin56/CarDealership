@@ -2,6 +2,7 @@ package com.example.cardealership.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.math.BigDecimal;
 
 @Entity
@@ -47,4 +48,8 @@ public class Car {
 
     @Column(name = "owner_count")
     private Integer ownerCount;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean deleted = false;
 }

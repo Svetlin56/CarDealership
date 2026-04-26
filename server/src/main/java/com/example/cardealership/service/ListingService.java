@@ -7,8 +7,10 @@ import com.example.cardealership.dto.ListingDtos;
 import com.example.cardealership.repository.CarRepository;
 import com.example.cardealership.repository.ListingRepository;
 import com.example.cardealership.repository.UserRepository;
+import com.example.cardealership.web.error.BusinessValidationException;
 import com.example.cardealership.web.error.InvalidListingStatusException;
 import com.example.cardealership.web.error.ResourceNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -23,17 +25,22 @@ public class ListingService {
     private final CarRepository carRepo;
     private final UserRepository userRepo;
 
+    @Transactional
     public ListingDtos.ListingResponse createByEmail(String email, ListingDtos.CreateListingRequest req) {
         User seller = userRepo.findByEmail(normalizeEmail(email))
-                .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", normalizeEmail(email)));
 
-        Car car = carRepo.findById(req.getCarId())
+        Car car = carRepo.findByIdAndDeletedFalse(req.getCarId())
                 .orElseThrow(() -> new ResourceNotFoundException("Car", "id", req.getCarId()));
+
+        if (listingRepo.existsByCar_IdAndStatus(car.getId(), Listing.Status.ACTIVE)) {
+            throw new BusinessValidationException("This car already has an active listing.");
+        }
 
         Listing listing = Listing.builder()
                 .car(car)
                 .seller(seller)
-                .description(req.getDescription())
+                .description(normalizeOptional(req.getDescription()))
                 .status(Listing.Status.ACTIVE)
                 .build();
 
@@ -41,21 +48,41 @@ public class ListingService {
     }
 
     public List<ListingDtos.ListingResponse> all() {
-        return ListingDtos.ListingResponse.fromList(listingRepo.findAll());
+        return ListingDtos.ListingResponse.fromList(
+                listingRepo.findAllByStatus(Listing.Status.ACTIVE)
+        );
     }
 
     public ListingDtos.ListingResponse get(Long id) {
-        Listing listing = listingRepo.findById(id)
+        Listing listing = listingRepo.findByIdAndStatus(id, Listing.Status.ACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException("Listing", "id", id));
 
         return ListingDtos.ListingResponse.from(listing);
     }
 
+    public ListingDtos.ListingResponse getActiveByCarId(Long carId) {
+        Listing listing = listingRepo.findFirstByCar_IdAndStatus(carId, Listing.Status.ACTIVE)
+                .orElseThrow(() -> new ResourceNotFoundException("Listing", "carId", carId));
+
+        if (listing.getCar().isDeleted()) {
+            throw new ResourceNotFoundException("Listing", "carId", carId);
+        }
+
+        return ListingDtos.ListingResponse.from(listing);
+    }
+
+    @Transactional
     public ListingDtos.ListingResponse updateStatus(Long id, ListingDtos.UpdateListingStatusRequest req) {
         Listing listing = listingRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Listing", "id", id));
 
-        listing.setStatus(parseStatus(req.getStatus()));
+        Listing.Status newStatus = parseStatus(req.getStatus());
+
+        if (listing.getCar().isDeleted() && newStatus == Listing.Status.ACTIVE) {
+            throw new BusinessValidationException("Cannot activate a listing for a deleted car.");
+        }
+
+        listing.setStatus(newStatus);
 
         return ListingDtos.ListingResponse.from(listingRepo.save(listing));
     }
@@ -74,5 +101,12 @@ public class ListingService {
 
     private String normalizeEmail(String email) {
         return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizeOptional(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 }

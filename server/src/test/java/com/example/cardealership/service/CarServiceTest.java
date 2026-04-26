@@ -1,16 +1,19 @@
 package com.example.cardealership.service;
 
 import com.example.cardealership.domain.Car;
+import com.example.cardealership.domain.Listing;
 import com.example.cardealership.dto.CarDtos;
 import com.example.cardealership.repository.CarRepository;
 import com.example.cardealership.repository.ListingRepository;
+import com.example.cardealership.service.car.CarMapper;
+import com.example.cardealership.service.car.CarSpecificationBuilder;
+import com.example.cardealership.service.car.CarValidator;
 import com.example.cardealership.web.error.DuplicateVinException;
 import com.example.cardealership.web.error.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
@@ -38,13 +41,25 @@ class CarServiceTest {
     @Mock
     private FileStorageService fileStorageService;
 
-    @InjectMocks
     private CarService carService;
 
     private Car car;
 
     @BeforeEach
     void setUp() {
+        CarMapper carMapper = new CarMapper();
+        CarValidator carValidator = new CarValidator(carRepository, carMapper);
+        CarSpecificationBuilder carSpecificationBuilder = new CarSpecificationBuilder();
+
+        carService = new CarService(
+                carRepository,
+                listingRepository,
+                fileStorageService,
+                carValidator,
+                carMapper,
+                carSpecificationBuilder
+        );
+
         car = Car.builder()
                 .id(1L)
                 .make("BMW")
@@ -57,6 +72,7 @@ class CarServiceTest {
                 .transmission("Automatic")
                 .doors(4)
                 .ownerCount(1)
+                .deleted(false)
                 .build();
     }
 
@@ -65,7 +81,7 @@ class CarServiceTest {
         CarDtos.CreateCarRequest request = new CarDtos.CreateCarRequest();
         request.setVin("WBA12345678901234");
 
-        when(carRepository.existsByVin(request.getVin())).thenReturn(true);
+        when(carRepository.existsByVin("WBA12345678901234")).thenReturn(true);
 
         assertThatThrownBy(() -> carService.create(request))
                 .isInstanceOf(DuplicateVinException.class)
@@ -88,14 +104,16 @@ class CarServiceTest {
         request.setDoors(4);
         request.setOwnerCount(1);
 
-        when(carRepository.existsByVin(request.getVin())).thenReturn(false);
+        when(carRepository.existsByVin("WBA12345678901234")).thenReturn(false);
         when(carRepository.save(any(Car.class))).thenReturn(car);
 
         CarDtos.CarResponse response = carService.create(request);
 
         assertThat(response.getId()).isEqualTo(1L);
         assertThat(response.getMake()).isEqualTo("BMW");
+        assertThat(response.getModel()).isEqualTo("320d");
         assertThat(response.getYear()).isEqualTo(2020);
+
         verify(carRepository).save(any(Car.class));
     }
 
@@ -125,7 +143,7 @@ class CarServiceTest {
 
     @Test
     void findByIdShouldThrowWhenCarMissing() {
-        when(carRepository.findById(99L)).thenReturn(Optional.empty());
+        when(carRepository.findByIdAndDeletedFalse(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> carService.findById(99L))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -133,19 +151,49 @@ class CarServiceTest {
     }
 
     @Test
-    void deleteShouldRemoveListingsFirstAndThenCar() {
+    void deleteShouldSoftDeleteCarAndHideListings() {
         Car carToDelete = Car.builder()
                 .id(5L)
+                .make("Audi")
+                .model("A4")
+                .prodYear(2019)
+                .mileage(90000L)
+                .vin("WAUZZZ8K9DA123456")
+                .price(new BigDecimal("21000"))
                 .imageUrl("/uploads/cars/test-image.jpg")
+                .deleted(false)
                 .build();
 
-        when(carRepository.findById(5L)).thenReturn(Optional.of(carToDelete));
+        Listing firstListing = Listing.builder()
+                .id(10L)
+                .car(carToDelete)
+                .status(Listing.Status.ACTIVE)
+                .build();
+
+        Listing secondListing = Listing.builder()
+                .id(11L)
+                .car(carToDelete)
+                .status(Listing.Status.SOLD)
+                .build();
+
+        List<Listing> listings = List.of(firstListing, secondListing);
+
+        when(carRepository.findByIdAndDeletedFalse(5L)).thenReturn(Optional.of(carToDelete));
+        when(listingRepository.findAllByCar_Id(5L)).thenReturn(listings);
 
         carService.delete(5L);
 
-        InOrder inOrder = inOrder(listingRepository, carRepository, fileStorageService);
-        inOrder.verify(listingRepository).deleteByCar_Id(5L);
-        inOrder.verify(carRepository).deleteById(5L);
-        inOrder.verify(fileStorageService).deleteCarImage("/uploads/cars/test-image.jpg");
+        assertThat(carToDelete.isDeleted()).isTrue();
+        assertThat(firstListing.getStatus()).isEqualTo(Listing.Status.HIDDEN);
+        assertThat(secondListing.getStatus()).isEqualTo(Listing.Status.HIDDEN);
+
+        InOrder inOrder = inOrder(listingRepository, carRepository);
+
+        inOrder.verify(listingRepository).findAllByCar_Id(5L);
+        inOrder.verify(listingRepository).saveAll(listings);
+        inOrder.verify(carRepository).save(carToDelete);
+
+        verify(carRepository, never()).deleteById(anyLong());
+        verify(fileStorageService, never()).deleteCarImage(anyString());
     }
 }

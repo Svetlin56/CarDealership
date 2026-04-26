@@ -24,14 +24,14 @@ public class MlController {
 
     @GetMapping("/recommendations")
     public List<MlRecommendationResponse> getRecommendations() {
-        List<Car> cars = carRepository.findAll();
+        List<Car> cars = carRepository.findAllByDeletedFalse();
 
         return mlRecommendationService.recommend(cars);
     }
 
     @GetMapping("/predict/{id}")
     public MlPredictionResponse predictPrice(@PathVariable Long id) {
-        Car car = carRepository.findById(id)
+        Car car = carRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Car", "id", id));
 
         Double predictedPrice = mlRecommendationService.predict(car);

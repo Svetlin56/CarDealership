@@ -25,18 +25,26 @@ DEFAULT_MODEL_FEATURES = [
 ]
 
 
+def get_default_metadata(artifact_status="missing_metadata"):
+    return {
+        "model_version": "missing",
+        "schema_version": "missing",
+        "model_features": DEFAULT_MODEL_FEATURES,
+        "metrics": {},
+        "artifact_status": artifact_status
+    }
+
+
 def load_metadata():
     if not METADATA_PATH.exists():
-        return {
-            "model_version": "missing",
-            "schema_version": "missing",
-            "model_features": DEFAULT_MODEL_FEATURES,
-            "metrics": {},
-            "artifact_status": "missing_metadata"
-        }
+        return get_default_metadata()
 
-    with open(METADATA_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(METADATA_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as ex:
+        app.logger.warning("Failed to load model metadata: %s", ex)
+        return get_default_metadata("invalid_metadata")
 
 
 def load_model():
@@ -49,9 +57,31 @@ def load_model():
     return joblib.load(MODEL_PATH)
 
 
+def initialize_model():
+    try:
+        loaded_model = load_model()
+        return loaded_model, None
+    except Exception as ex:
+        app.logger.warning("ML model could not be loaded: %s", ex)
+        return None, str(ex)
+
+
 MODEL_METADATA = load_metadata()
 MODEL_FEATURES = MODEL_METADATA.get("model_features", DEFAULT_MODEL_FEATURES)
-model = load_model()
+
+model, MODEL_LOAD_ERROR = initialize_model()
+
+
+def is_model_loaded():
+    return model is not None
+
+
+def model_unavailable_response():
+    return jsonify({
+        "error": "ML model is not loaded",
+        "details": MODEL_LOAD_ERROR,
+        "action": "Run `python train.py` from the ml-service directory before using prediction or recommendation endpoints."
+    }), 503
 
 
 def get_anomaly_data(real_price, predicted_price):
@@ -187,6 +217,9 @@ def to_native_types(records):
 
 @app.route("/predict", methods=["POST"])
 def predict():
+    if not is_model_loaded():
+        return model_unavailable_response()
+
     try:
         data = request.get_json()
 
@@ -211,6 +244,9 @@ def predict():
 
 @app.route("/recommend", methods=["POST"])
 def recommend():
+    if not is_model_loaded():
+        return model_unavailable_response()
+
     try:
         data = request.get_json()
 
@@ -262,16 +298,24 @@ def recommend():
 
 @app.route("/model-info", methods=["GET"])
 def model_info():
-    return jsonify(MODEL_METADATA)
+    return jsonify({
+        **MODEL_METADATA,
+        "model_loaded": is_model_loaded(),
+        "model_load_error": MODEL_LOAD_ERROR,
+        "model_path": str(MODEL_PATH),
+        "metadata_path": str(METADATA_PATH)
+    })
 
 
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({
         "status": "UP",
-        "model_loaded": model is not None,
+        "model_loaded": is_model_loaded(),
+        "model_status": "AVAILABLE" if is_model_loaded() else "UNAVAILABLE",
         "model_version": MODEL_METADATA.get("model_version"),
-        "schema_version": MODEL_METADATA.get("schema_version")
+        "schema_version": MODEL_METADATA.get("schema_version"),
+        "model_load_error": MODEL_LOAD_ERROR
     })
 
 

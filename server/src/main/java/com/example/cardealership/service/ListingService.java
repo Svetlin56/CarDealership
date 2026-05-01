@@ -82,9 +82,25 @@ public class ListingService {
             throw new BusinessValidationException("Cannot activate a listing for a deleted car.");
         }
 
+        if (newStatus == Listing.Status.ACTIVE) {
+            validateNoOtherActiveListingForCar(listing);
+        }
+
         listing.setStatus(newStatus);
 
         return ListingDtos.ListingResponse.from(listingRepo.save(listing));
+    }
+
+    private void validateNoOtherActiveListingForCar(Listing listing) {
+        boolean otherActiveListingExists = listingRepo.existsByCar_IdAndStatusAndIdNot(
+                listing.getCar().getId(),
+                Listing.Status.ACTIVE,
+                listing.getId()
+        );
+
+        if (otherActiveListingExists) {
+            throw new BusinessValidationException("This car already has an active listing.");
+        }
     }
 
     private Listing.Status parseStatus(String rawStatus) {
@@ -107,6 +123,7 @@ public class ListingService {
         if (value == null || value.isBlank()) {
             return null;
         }
+
         return value.trim();
     }
 }

@@ -19,4 +19,6 @@ public interface ListingRepository extends JpaRepository<Listing, Long>, JpaSpec
     Optional<Listing> findFirstByCar_IdAndStatus(Long carId, Listing.Status status);
 
     boolean existsByCar_IdAndStatus(Long carId, Listing.Status status);
+
+    boolean existsByCar_IdAndStatusAndIdNot(Long carId, Listing.Status status, Long listingId);
 }

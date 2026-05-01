@@ -224,6 +224,43 @@ class ListingServiceTest {
                 .hasMessage("Invalid listing status: archived");
     }
 
+
+    @Test
+    void updateStatusShouldActivateListingWhenNoOtherActiveListingExistsForSameCar() {
+        listing.setStatus(Listing.Status.HIDDEN);
+
+        ListingDtos.UpdateListingStatusRequest request = new ListingDtos.UpdateListingStatusRequest();
+        request.setStatus("ACTIVE");
+
+        when(listingRepo.findById(100L)).thenReturn(Optional.of(listing));
+        when(listingRepo.existsByCar_IdAndStatusAndIdNot(10L, Listing.Status.ACTIVE, 100L))
+                .thenReturn(false);
+        when(listingRepo.save(any(Listing.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ListingDtos.ListingResponse response = listingService.updateStatus(100L, request);
+
+        assertThat(response.getStatus()).isEqualTo("ACTIVE");
+        assertThat(listing.getStatus()).isEqualTo(Listing.Status.ACTIVE);
+    }
+
+    @Test
+    void updateStatusShouldFailWhenAnotherActiveListingExistsForSameCar() {
+        listing.setStatus(Listing.Status.HIDDEN);
+
+        ListingDtos.UpdateListingStatusRequest request = new ListingDtos.UpdateListingStatusRequest();
+        request.setStatus("ACTIVE");
+
+        when(listingRepo.findById(100L)).thenReturn(Optional.of(listing));
+        when(listingRepo.existsByCar_IdAndStatusAndIdNot(10L, Listing.Status.ACTIVE, 100L))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> listingService.updateStatus(100L, request))
+                .isInstanceOf(BusinessValidationException.class)
+                .hasMessage("This car already has an active listing.");
+
+        verify(listingRepo, never()).save(any(Listing.class));
+    }
+
     @Test
     void updateStatusShouldNotActivateListingForDeletedCar() {
         car.setDeleted(true);

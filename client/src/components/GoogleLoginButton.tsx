@@ -1,9 +1,9 @@
-import React from "react";
+import { API_BASE_URL } from "../api/http";
 
 export default function GoogleLoginButton() {
 
     const handleLogin = () => {
-        window.location.href = "http://localhost:8080/oauth2/authorization/google";
+        window.location.href = `${API_BASE_URL}/oauth2/authorization/google`;
     };
 
     return (

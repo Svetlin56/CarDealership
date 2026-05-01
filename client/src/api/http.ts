@@ -1,10 +1,12 @@
 import axios from "axios";
 
-export const API_BASE_URL =
-    import.meta.env.VITE_API_URL?.replace(/\/+$/, "") || "http://localhost:8080";
+const rawApiUrl = import.meta.env.VITE_API_URL ?? "";
+
+export const API_BASE_URL = rawApiUrl.replace(/\/+$/, "");
+export const API_V1_BASE_URL = `${API_BASE_URL}/api/v1`;
 
 const http = axios.create({
-    baseURL: `${API_BASE_URL}/api/v1`,
+    baseURL: API_V1_BASE_URL,
     headers: {
         "Content-Type": "application/json"
     },

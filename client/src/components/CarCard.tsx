@@ -1,7 +1,6 @@
-import { Car } from "../types/models";
 import { Link } from "react-router-dom";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+import { API_BASE_URL } from "../api/http";
+import { Car } from "../types/models";
 
 type CarCardProps = {
     car: Car;

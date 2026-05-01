@@ -1,9 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import http from "../api/http";
+import http, { API_BASE_URL } from "../api/http";
 import { InquiryRequest, InquiryResponse, Listing } from "../types/models";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 const INITIAL_INQUIRY: InquiryRequest = {
     name: "",

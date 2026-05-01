@@ -8,6 +8,9 @@ ml-service/venv
 
 ml-service/artifacts/
 
+server/uploads/cars/*
+!server/uploads/cars/.gitkeep
+
 .idea/
 *.iml
 *.ipr

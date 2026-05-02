@@ -9,13 +9,17 @@ import com.example.cardealership.web.error.BusinessValidationException;
 import com.example.cardealership.web.error.ResourceNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Locale;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InquiryService {
+
+    private static final String INQUIRY_EMAIL_SUBJECT = "New inquiry for your listing";
 
     private final InquiryRepository inquiryRepo;
     private final ListingRepository listingRepo;
@@ -40,14 +44,48 @@ public class InquiryService {
 
         Inquiry saved = inquiryRepo.save(inquiry);
 
-        emailService.sendInquiry(
-                listing.getSeller().getEmail(),
-                "New inquiry for your listing",
-                "You have a new inquiry from " + saved.getName() +
-                        " (" + saved.getEmail() + ", " + saved.getPhone() + ")\n\n" +
-                        (saved.getMessage() == null ? "" : saved.getMessage())
-        );
+        sendInquiryNotificationSafely(listing, saved);
 
+        return toResponse(saved);
+    }
+
+    private void sendInquiryNotificationSafely(Listing listing, Inquiry inquiry) {
+        try {
+            emailService.sendInquiry(
+                    listing.getSeller().getEmail(),
+                    INQUIRY_EMAIL_SUBJECT,
+                    buildInquiryEmailBody(inquiry)
+            );
+        } catch (Exception ex) {
+            log.warn(
+                    "Inquiry was saved, but notification email could not be sent. listingId={}, inquiryId={}, sellerEmail={}",
+                    listing.getId(),
+                    inquiry.getId(),
+                    listing.getSeller().getEmail(),
+                    ex
+            );
+        }
+    }
+
+    private String buildInquiryEmailBody(Inquiry inquiry) {
+        StringBuilder body = new StringBuilder();
+
+        body.append("You have a new inquiry from ")
+                .append(inquiry.getName())
+                .append(" (")
+                .append(inquiry.getEmail())
+                .append(", ")
+                .append(inquiry.getPhone())
+                .append(")");
+
+        if (inquiry.getMessage() != null && !inquiry.getMessage().isBlank()) {
+            body.append("\n\n").append(inquiry.getMessage());
+        }
+
+        return body.toString();
+    }
+
+    private InquiryDtos.InquiryResponse toResponse(Inquiry saved) {
         return new InquiryDtos.InquiryResponse(
                 saved.getId(),
                 saved.getListing().getId(),
@@ -70,6 +108,7 @@ public class InquiryService {
         if (value == null || value.isBlank()) {
             return null;
         }
+
         return value.trim();
     }
 }

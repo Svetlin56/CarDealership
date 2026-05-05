@@ -1,189 +1,292 @@
-## 📌 Overview
+📌 Overview
 
 This project consists of:
 
-- **Frontend (React + TypeScript)** – user interface
-- **Backend (Spring Boot)** – REST API and business logic
-- **ML Service (Python)** – recommendation engine
+Frontend (React + TypeScript) – user interface
+Backend (Spring Boot) – REST API, authentication, authorization and business logic
+Database (MySQL) – persistent storage managed through Flyway migrations
+ML Service (Python) – recommendation engine
 
 The system allows users to:
 
-- Browse available cars
-- View detailed car listings
-- Register and authenticate, including Google OAuth
-- Receive car recommendations
-- Admins can manage car listings
+Browse available cars
+View detailed car listings
+Search and filter cars by brand, model, VIN, fuel type, transmission, year and price
+Register and authenticate, including Google OAuth
+Receive car recommendations
+Send inquiries for car listings
+Admins can create, edit, delete and manage cars
 
----
+🏗️ Architecture
+ 
+                     React Frontend
+                           ↓
 
-## 🏗️ Architecture
+                     Spring Boot API 
 
+               ↓                          ↓
+       MySQL Database      ML Recommendation Service (Python) 
 
-      [ React Frontend ]
+Frontend communicates with the backend via REST API
+Backend handles authentication, authorization, validation, business logic and persistence
+MySQL stores users, cars, listings and inquiries
+Flyway manages database schema migrations
+ML service provides recommendation results based on vehicle data and vehicle-related criteria
 
-               ↓
+⚙️ Tech Stack
 
-      [ Spring Boot API ]
+Frontend
+React
+TypeScript
+Vite
+React Router
+Axios
+Context API
+Bootstrap
+Vitest
+Backend
+Java 21
+Spring Boot
+Spring Security
+RESTful API
+JWT authentication stored in an HttpOnly cookie
+CSRF protection
+Google OAuth
+Role-based access control
+Flyway Database Migrations
+MySQL
+Spring Data JPA
+Springdoc OpenAPI / Swagger
+Testcontainers
+Machine Learning Service
+Python
+Flask
+pandas
+scikit-learn
+joblib
+CSV dataset (cars.csv)
 
-               ↓
+✨ Features
 
-      [ ML Recommendation Service (Python) ]
+🔐 Authentication & Authorization
 
+User registration and login
+Google OAuth integration
+JWT authentication stored in an HttpOnly cookie
+CSRF protection for state-changing requests
+Role-based access control (USER / ADMIN)
+Protected frontend routes
+Admin-only functionality
 
-- Frontend communicates with the backend via REST API
-- Backend handles authentication, authorization, business logic, and persistence
-- ML service provides recommendation results based on vehicle data and user-related criteria
+🚘 Car Listings
 
----
+Browse all available cars
+View detailed car information
+Search and filter listings
+Pagination and sorting
+Upload and manage car images
+Admin CRUD operations
+Soft delete support
 
-## ⚙️ Tech Stack
+📩 Inquiries
 
-### Frontend
-- React
-- TypeScript
-- Vite
-- Context API
+Users can send inquiries for car listings
+Inquiry information is stored in the database
+Email notification support for listing inquiries
 
-### Backend
-- Spring Boot
-- Spring Security
-- RESTful API
-- JWT Authentication
-- Google OAuth
-- Flyway Database Migrations
-- MySQL
+🤖 Recommendations
 
-### Machine Learning Service
-- Python
-- Flask
-- Custom recommendation model
-- CSV dataset (`cars.csv`)
+ML-powered car suggestions
+Based on vehicle characteristics and dataset analysis
+Provided through a separate Python ML service
+Backend communicates with the ML service through a REST API
 
----
+📊 Dashboard
 
-## ✨ Features
+Admin dashboard for managing cars
+Create new cars
+Edit existing cars
+Delete cars
+Upload car images
+Search inside the admin panel
 
-### 🔐 Authentication & Authorization
-- User registration and login
-- Google OAuth integration
-- JWT-based authentication
-- Role-based access control (User / Admin)
+📁 Project Structure
 
-### 🚘 Car Listings
-- Browse all available cars
-- View detailed car information
-- Search and filter listings
-- Upload and manage car images
-- Admin CRUD operations
+          CarDealership/
+          │
+          ├── client/      # React + TypeScript frontend
+          ├── server/      # Spring Boot backend
+          ├── ml-service/  # Python ML service
+          │
+          └── README.md
+🚀 Getting Started
+Prerequisites
 
-### 🤖 Recommendations
-- ML-powered car suggestions
-- Based on vehicle characteristics and dataset analysis
-- Provided through a separate Python ML service
+Before running the project locally, make sure you have installed:
 
-### 📊 Dashboard
-- Personalized user dashboard
-- Admin management interface
+Java 21
+Maven 3.9+
+Node.js 18+
+npm
+Python 3.10+
+MySQL 8+
+Environment Variables
 
----
+The backend uses environment variables for database access, authentication, email configuration and external services.
 
-## 📁 Project Structure
+Common backend variables:
 
+SQL_PASSWORD=your_mysql_password
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD_HASH=your_bcrypt_admin_password_hash
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_JWT_SECRET=your_jwt_secret
+MAIL_USER=your_email_username
+MAIL_PASS=your_email_password
+ML_SERVICE_URL=http://localhost:5000
 
-      CarDealership/
-      │
-      ├── client/      # React frontend
-      ├── server/      # Spring Boot backend
-      ├── ml-service/  # Python ML service
-      │
-      └── README.md
+The frontend uses:
 
+VITE_API_URL=http://localhost:8080
+Database Setup
 
----
+Create the MySQL database before starting the backend:
 
-## 🚀 Getting Started
+CREATE DATABASE cardealership;
 
-1. Start Backend (Spring Boot)
+Flyway will automatically apply the database migrations when the backend starts.
 
-   cd server
+Start Backend (Spring Boot)
 
-   mvn spring-boot:run
+cd server
 
-2. Start Frontend
+mvn spring-boot:run
 
-   cd client
+Backend runs on:
 
-   npm install
+http://localhost:8080
 
-   npm run dev
+Swagger UI is available at:
 
-3. Start ML Service
+http://localhost:8080/swagger-ui/index.html
 
-   cd ml-service
+Start Frontend
 
-   pip install -r requirements.txt
+cd client
 
-   python train.py
+npm install
 
-   python app.py
+npm run dev
 
----
+Frontend runs on:
 
-## 🧠 Machine Learning
+http://localhost:5173
+
+Start ML Service
+
+cd ml-service
+
+pip install -r requirements.txt
+
+python train.py
+
+python app.py
+
+ML service runs on:
+
+http://localhost:5000
+
+🔐 Authentication Flow
+
+The application uses JWT authentication with HttpOnly cookies.
+
+After successful login, registration or Google OAuth login, the backend writes the JWT token into an authentication cookie.
+
+The frontend does not store the JWT token directly. Instead, it checks the current authenticated user through:
+
+GET /api/v1/auth/me
+
+CSRF protection is used for state-changing requests such as login, registration, logout, create, update and delete operations.
+
+The CSRF token can be obtained through:
+
+GET /api/v1/auth/csrf
+
+🧠 Machine Learning
 
 The ML service:
 
-- Uses a dataset of cars (`cars.csv`)
-- Trains a recommendation model (`train.py`)
-- Serves prediction and recommendation results via API (`app.py`)
+Uses a dataset of cars (cars.csv)
+Trains a recommendation model (train.py)
+Serves prediction and recommendation results via API (app.py)
+Is consumed by the Spring Boot backend through the configured ML service URL
 
-The trained model artifact is not included in the repository because of its file size.  
-To run the ML service locally, the model should be generated first by executing `train.py`.
+The trained model artifact is not included in the repository because of its file size.
+To run the ML service locally, the model should be generated first by executing train.py.
 
----
+The recommendation service is separated from the backend in order to keep the web application logic and machine learning logic independent.
 
-## 🛡️ Security
+🛡️ Security
 
-- JWT-based authentication
-- Google OAuth authentication
-- Protected routes
-- Role-based access control
-- CORS configuration
-- Input validation
-- Secure image upload validation
+JWT authentication stored in an HttpOnly cookie
+CSRF protection
+Google OAuth authentication
+Protected routes
+Role-based access control
+CORS configuration
+Input validation through DTO validation
+Global exception handling
+Secure image upload validation
+File type validation based on extension and content checks
 
----
+🧪 Running Tests
+Backend Tests
 
-## 🧪 Future Improvements
+cd server
 
-- Advanced filtering by price, brand, fuel type, and other vehicle characteristics
-- Pagination and search optimization
-- Docker and Kubernetes deployment
-- Real-time notifications
-- Improved ML model evaluation and versioning
-- Collaborative filtering
-- Extended frontend and ML service test coverage
+mvn test
 
----
+Frontend Tests
 
-## 👨‍💻 Author
+cd client
+
+npm test
+
+🧪 Future Improvements
+
+Docker Compose setup for local development
+Docker and Kubernetes deployment
+CI pipeline for automated testing
+Query performance optimization for larger datasets
+More advanced recommendation model evaluation
+ML model versioning
+Collaborative filtering
+Real-time notifications
+Extended frontend test coverage
+Extended ML service test coverage
+Audit fields for domain entities
+Production deployment configuration
+
+👨‍💻 Author
 
 Developed as a full-stack project demonstrating:
 
-- Scalable architecture
-- REST API design
-- Microservice design
-- Authentication and authorization
-- Integration of machine learning into web applications
+Scalable architecture
+REST API design
+Microservice-based ML integration
+Authentication and authorization
+Database migration management
+Secure file upload handling
+Integration of machine learning into web applications
 
----
-
-## 📜 License
+📜 License
 
 This project is for educational purposes.
 
 This project uses the Car Price Prediction dataset published on Kaggle.
 
-Author: Mustafa Oz  
-Source: https://www.kaggle.com/code/mustafaoz158/car-price-prediction/notebook  
+Author: Mustafa Oz
+Source: https://www.kaggle.com/code/mustafaoz158/car-price-prediction/notebook
+
 License: Apache License 2.0

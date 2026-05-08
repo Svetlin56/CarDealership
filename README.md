@@ -18,7 +18,7 @@ Send inquiries for car listings
 Admins can create, edit, delete and manage cars
 
 🏗️ Architecture
- 
+
                      React Frontend
                            ↓
 
@@ -50,7 +50,6 @@ Spring Boot
 Spring Security
 RESTful API
 JWT authentication stored in an HttpOnly cookie
-CSRF protection
 Google OAuth
 Role-based access control
 Flyway Database Migrations
@@ -73,7 +72,6 @@ CSV dataset (cars.csv)
 User registration and login
 Google OAuth integration
 JWT authentication stored in an HttpOnly cookie
-CSRF protection for state-changing requests
 Role-based access control (USER / ADMIN)
 Protected frontend routes
 Admin-only functionality
@@ -207,12 +205,6 @@ The frontend does not store the JWT token directly. Instead, it checks the curre
 
 GET /api/v1/auth/me
 
-CSRF protection is used for state-changing requests such as login, registration, logout, create, update and delete operations.
-
-The CSRF token can be obtained through:
-
-GET /api/v1/auth/csrf
-
 🧠 Machine Learning
 
 The ML service:
@@ -230,7 +222,6 @@ The recommendation service is separated from the backend in order to keep the we
 🛡️ Security
 
 JWT authentication stored in an HttpOnly cookie
-CSRF protection
 Google OAuth authentication
 Protected routes
 Role-based access control
@@ -267,26 +258,3 @@ Extended frontend test coverage
 Extended ML service test coverage
 Audit fields for domain entities
 Production deployment configuration
-
-👨‍💻 Author
-
-Developed as a full-stack project demonstrating:
-
-Scalable architecture
-REST API design
-Microservice-based ML integration
-Authentication and authorization
-Database migration management
-Secure file upload handling
-Integration of machine learning into web applications
-
-📜 License
-
-This project is for educational purposes.
-
-This project uses the Car Price Prediction dataset published on Kaggle.
-
-Author: Mustafa Oz
-Source: https://www.kaggle.com/code/mustafaoz158/car-price-prediction/notebook
-
-License: Apache License 2.0

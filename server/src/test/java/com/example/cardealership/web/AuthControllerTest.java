@@ -2,27 +2,26 @@ package com.example.cardealership.web;
 
 import com.example.cardealership.config.CorsProperties;
 import com.example.cardealership.config.SecurityConfig;
-import com.example.cardealership.domain.Role;
-import com.example.cardealership.domain.User;
-import com.example.cardealership.security.AuthCookieService;
+import com.example.cardealership.dto.AuthDtos.AuthResponse;
+import com.example.cardealership.dto.AuthDtos.LoginRequest;
+import com.example.cardealership.dto.AuthDtos.RegisterRequest;
 import com.example.cardealership.security.GoogleSuccessHandler;
 import com.example.cardealership.security.JwtAuthFilter;
-import com.example.cardealership.security.JwtService;
-import com.example.cardealership.service.EmailService;
-import com.example.cardealership.service.UserService;
+import com.example.cardealership.service.AuthService;
 import com.example.cardealership.web.error.ApiErrorFactory;
 import com.example.cardealership.web.error.GlobalExceptionHandler;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -31,10 +30,11 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -46,19 +46,7 @@ class AuthControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private AuthenticationManager authManager;
-
-    @MockBean
-    private JwtService jwtService;
-
-    @MockBean
-    private UserService userService;
-
-    @MockBean
-    private EmailService emailService;
-
-    @MockBean
-    private AuthCookieService authCookieService;
+    private AuthService authService;
 
     @MockBean
     private JwtAuthFilter jwtAuthFilter;
@@ -91,15 +79,8 @@ class AuthControllerTest {
 
     @Test
     void registerShouldCreateUserAndReturnJwt() throws Exception {
-        User user = User.builder()
-                .id(1L)
-                .email("user@test.com")
-                .role(Role.USER)
-                .passwordHash("encoded")
-                .build();
-
-        when(userService.createUser("user@test.com", "secret123")).thenReturn(user);
-        when(jwtService.generateToken("user@test.com", "USER")).thenReturn("jwt-token");
+        when(authService.register(any(RegisterRequest.class), any(HttpServletResponse.class)))
+                .thenReturn(new AuthResponse("jwt-token", "user@test.com", "USER", null));
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(APPLICATION_JSON)
@@ -115,21 +96,13 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.email").value("user@test.com"))
                 .andExpect(jsonPath("$.role").value("USER"));
 
-        verify(emailService).sendRegistrationEmail("user@test.com");
-        verify(authCookieService).writeAuthCookie(any(), any());
+        verify(authService).register(any(RegisterRequest.class), any(HttpServletResponse.class));
     }
 
     @Test
     void loginShouldAuthenticateAndReturnJwt() throws Exception {
-        User user = User.builder()
-                .id(1L)
-                .email("admin@test.com")
-                .role(Role.ADMIN)
-                .passwordHash("encoded")
-                .build();
-
-        when(userService.findByEmail("admin@test.com")).thenReturn(user);
-        when(jwtService.generateToken("admin@test.com", "ADMIN")).thenReturn("admin-token");
+        when(authService.login(any(LoginRequest.class), any(HttpServletResponse.class)))
+                .thenReturn(new AuthResponse("admin-token", "admin@test.com", "ADMIN", null));
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(APPLICATION_JSON)
@@ -142,15 +115,16 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
                 .andExpect(jsonPath("$.token").value("admin-token"))
+                .andExpect(jsonPath("$.email").value("admin@test.com"))
                 .andExpect(jsonPath("$.role").value("ADMIN"));
 
-        verify(authCookieService).writeAuthCookie(any(), any());
+        verify(authService).login(any(LoginRequest.class), any(HttpServletResponse.class));
     }
 
     @Test
     void loginShouldReturnUnauthorizedWhenCredentialsInvalid() throws Exception {
-        doThrow(new BadCredentialsException("Bad credentials"))
-                .when(authManager).authenticate(any());
+        when(authService.login(any(LoginRequest.class), any(HttpServletResponse.class)))
+                .thenThrow(new BadCredentialsException("Bad credentials"));
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(APPLICATION_JSON)
@@ -180,5 +154,21 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.message").value("Validation failed"))
                 .andExpect(jsonPath("$.fieldErrors.email").exists())
                 .andExpect(jsonPath("$.fieldErrors.password").exists());
+    }
+
+    @Test
+    void meShouldReturnCurrentAuthenticatedUser() throws Exception {
+        when(authService.getCurrentUser(any(Authentication.class)))
+                .thenReturn(new AuthResponse(null, "user@test.com", "USER", null));
+
+        mockMvc.perform(get("/api/v1/auth/me")
+                        .with(user("user@test.com").roles("USER")))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
+                .andExpect(jsonPath("$.token").doesNotExist())
+                .andExpect(jsonPath("$.email").value("user@test.com"))
+                .andExpect(jsonPath("$.role").value("USER"));
+
+        verify(authService).getCurrentUser(any(Authentication.class));
     }
 }

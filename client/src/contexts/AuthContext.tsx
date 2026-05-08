@@ -6,7 +6,7 @@ import React, {
     useMemo,
     useState
 } from "react";
-import { API_BASE_URL } from "../api/http";
+import http from "../api/http";
 import type { AuthResponse, AuthUser } from "../types/auth";
 
 type AuthContextType = {
@@ -23,7 +23,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const USER_STORAGE_KEY = "user";
 
-function getStoredUser(): AuthUser | null {
+function getPersistedUser(): AuthUser | null {
     const rawUser = localStorage.getItem(USER_STORAGE_KEY);
 
     if (!rawUser) {
@@ -31,14 +31,9 @@ function getStoredUser(): AuthUser | null {
     }
 
     try {
-        const parsed = JSON.parse(rawUser);
-
-        return {
-            email: parsed.email ?? null,
-            role: parsed.role ?? null,
-            picture: parsed.picture ?? null
-        };
+        return JSON.parse(rawUser) as AuthUser;
     } catch {
+        localStorage.removeItem(USER_STORAGE_KEY);
         return null;
     }
 }
@@ -51,21 +46,68 @@ function clearPersistedAuth() {
     localStorage.removeItem(USER_STORAGE_KEY);
 }
 
+function normalizePicture(picture?: string | null) {
+    if (!picture) {
+        return null;
+    }
+
+    const trimmedPicture = picture.trim();
+
+    return trimmedPicture.length > 0 ? trimmedPicture : null;
+}
+
+function mapAuthResponseToUser(
+    authData: AuthResponse,
+    fallbackUser: AuthUser | null = null
+): AuthUser {
+    const normalizedPicture = normalizePicture(authData.picture);
+
+    return {
+        email: authData.email ?? fallbackUser?.email ?? null,
+        role: authData.role ?? fallbackUser?.role ?? null,
+        picture: normalizedPicture ?? fallbackUser?.picture ?? null
+    };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<AuthUser | null>(null);
+    const [user, setUser] = useState<AuthUser | null>(() => getPersistedUser());
     const [isInitializing, setIsInitializing] = useState(true);
 
     useEffect(() => {
-        setUser(getStoredUser());
-        setIsInitializing(false);
+        let isMounted = true;
+
+        async function loadCurrentUser() {
+            try {
+                const persistedUser = getPersistedUser();
+                const response = await http.get<AuthResponse>("/auth/me");
+                const currentUser = mapAuthResponseToUser(response.data, persistedUser);
+
+                if (isMounted) {
+                    persistUser(currentUser);
+                    setUser(currentUser);
+                }
+            } catch {
+                if (isMounted) {
+                    clearPersistedAuth();
+                    setUser(null);
+                }
+            } finally {
+                if (isMounted) {
+                    setIsInitializing(false);
+                }
+            }
+        }
+
+        loadCurrentUser();
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     const login = useCallback((authData: AuthResponse) => {
-        const normalizedUser: AuthUser = {
-            email: authData.email ?? null,
-            role: authData.role ?? null,
-            picture: authData.picture ?? null
-        };
+        const persistedUser = getPersistedUser();
+        const normalizedUser = mapAuthResponseToUser(authData, persistedUser);
 
         persistUser(normalizedUser);
         setUser(normalizedUser);
@@ -77,10 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const logout = useCallback(async () => {
         try {
-            await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
-                method: "POST",
-                credentials: "include"
-            });
+            await http.post("/auth/logout");
         } catch (error) {
             console.error("Logout request failed:", error);
         } finally {

@@ -3,6 +3,7 @@ package com.example.cardealership.security;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
@@ -18,10 +19,16 @@ public class AuthCookieService {
 
     private static final Duration COOKIE_MAX_AGE = Duration.ofDays(1);
 
+    private final boolean cookieSecure;
+
+    public AuthCookieService(@Value("${app.security.cookie-secure:false}") boolean cookieSecure) {
+        this.cookieSecure = cookieSecure;
+    }
+
     public void writeAuthCookie(HttpServletResponse response, String token) {
         ResponseCookie cookie = ResponseCookie.from(AUTH_COOKIE_NAME, token)
                 .httpOnly(true)
-                .secure(false)
+                .secure(cookieSecure)
                 .sameSite("Lax")
                 .path("/")
                 .maxAge(COOKIE_MAX_AGE)
@@ -33,7 +40,7 @@ public class AuthCookieService {
     public void clearAuthCookie(HttpServletResponse response) {
         ResponseCookie cookie = ResponseCookie.from(AUTH_COOKIE_NAME, "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(cookieSecure)
                 .sameSite("Lax")
                 .path("/")
                 .maxAge(Duration.ZERO)

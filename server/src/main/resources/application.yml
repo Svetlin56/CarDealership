@@ -60,6 +60,8 @@ cors:
 
 app:
   frontend-url: http://localhost:5173
+  security:
+    cookie-secure: ${APP_SECURITY_COOKIE_SECURE:false}
   storage:
     car-images-dir: server/uploads/cars
 

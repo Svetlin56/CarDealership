@@ -124,3 +124,15 @@ img { object-fit: cover; }
 .table-responsive {
     border: 1mm ridge #74c0fc;
 }
+
+.inquiry-table-wrapper {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+}
+
+.inquiry-message-cell {
+    min-width: 220px;
+    max-width: 360px;
+    white-space: pre-wrap;
+}

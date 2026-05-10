@@ -3,6 +3,8 @@ package com.example.cardealership.dto;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
+import java.time.Instant;
+
 public class InquiryDtos {
 
     @Getter
@@ -37,5 +39,19 @@ public class InquiryDtos {
         private String email;
         private String phone;
         private String message;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class AdminInquiryResponse {
+
+        private Long id;
+        private Long listingId;
+        private String carTitle;
+        private String name;
+        private String email;
+        private String phone;
+        private String message;
+        private Instant createdAt;
     }
 }

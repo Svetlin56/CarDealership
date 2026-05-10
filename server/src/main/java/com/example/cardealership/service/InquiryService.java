@@ -7,11 +7,13 @@ import com.example.cardealership.repository.InquiryRepository;
 import com.example.cardealership.repository.ListingRepository;
 import com.example.cardealership.web.error.BusinessValidationException;
 import com.example.cardealership.web.error.ResourceNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Locale;
 
 @Slf4j
@@ -47,6 +49,14 @@ public class InquiryService {
         sendInquiryNotificationSafely(listing, saved);
 
         return toResponse(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public List<InquiryDtos.AdminInquiryResponse> findAllForAdmin() {
+        return inquiryRepo.findAllBy(Sort.by(Sort.Direction.DESC, "createdAt"))
+                .stream()
+                .map(this::toAdminResponse)
+                .toList();
     }
 
     private void sendInquiryNotificationSafely(Listing listing, Inquiry inquiry) {
@@ -93,6 +103,19 @@ public class InquiryService {
                 saved.getEmail(),
                 saved.getPhone(),
                 saved.getMessage()
+        );
+    }
+
+    private InquiryDtos.AdminInquiryResponse toAdminResponse(Inquiry inquiry) {
+        return new InquiryDtos.AdminInquiryResponse(
+                inquiry.getId(),
+                inquiry.getListing().getId(),
+                inquiry.getListing().getCar().getMake() + " " + inquiry.getListing().getCar().getModel(),
+                inquiry.getName(),
+                inquiry.getEmail(),
+                inquiry.getPhone(),
+                inquiry.getMessage(),
+                inquiry.getCreatedAt()
         );
     }
 

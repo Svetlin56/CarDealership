@@ -11,6 +11,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import OAuthSuccess from "./pages/OAuthSuccess";
 import Recommendations from "./pages/Recommendations";
+import Inquiries from "./pages/Inquiries";
 
 export default function App() {
     return (
@@ -33,6 +34,7 @@ export default function App() {
 
                 <Route element={<AdminRoute />}>
                     <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/inquiries" element={<Inquiries />} />
                 </Route>
             </Routes>
         </Layout>

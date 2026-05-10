@@ -45,11 +45,19 @@ export default function NavBar() {
                         )}
 
                         {isAuthenticated && isAdmin && (
-                            <li className="nav-item">
-                                <NavLink to="/dashboard" className="nav-link">
-                                    Admin
-                                </NavLink>
-                            </li>
+                            <>
+                                <li className="nav-item">
+                                    <NavLink to="/dashboard" className="nav-link">
+                                        Admin
+                                    </NavLink>
+                                </li>
+
+                                <li className="nav-item">
+                                    <NavLink to="/inquiries" className="nav-link">
+                                        Inquiry
+                                    </NavLink>
+                                </li>
+                            </>
                         )}
                     </ul>
 

@@ -52,6 +52,11 @@ export type InquiryResponse = InquiryRequest & {
     listingId: number;
 };
 
+export type AdminInquiry = InquiryResponse & {
+    carTitle: string;
+    createdAt: string;
+};
+
 export type MlRecommendationApiResponse = {
     Year: number;
     Engine_Size: number;

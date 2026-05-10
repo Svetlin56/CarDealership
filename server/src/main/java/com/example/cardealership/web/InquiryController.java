@@ -32,4 +32,12 @@ public class InquiryController {
     public List<InquiryDtos.AdminInquiryResponse> all() {
         return inquiryService.findAllForAdmin();
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        inquiryService.deleteForAdmin(id);
+
+        return ResponseEntity.noContent().build();
+    }
 }

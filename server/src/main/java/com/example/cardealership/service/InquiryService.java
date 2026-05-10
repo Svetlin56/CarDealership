@@ -59,6 +59,14 @@ public class InquiryService {
                 .toList();
     }
 
+    @Transactional
+    public void deleteForAdmin(Long id) {
+        Inquiry inquiry = inquiryRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Inquiry", "id", id));
+
+        inquiryRepo.delete(inquiry);
+    }
+
     private void sendInquiryNotificationSafely(Listing listing, Inquiry inquiry) {
         try {
             emailService.sendInquiry(

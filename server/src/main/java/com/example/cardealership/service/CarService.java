@@ -2,9 +2,11 @@ package com.example.cardealership.service;
 
 import com.example.cardealership.domain.Car;
 import com.example.cardealership.domain.Listing;
+import com.example.cardealership.domain.User;
 import com.example.cardealership.dto.CarDtos;
 import com.example.cardealership.repository.CarRepository;
 import com.example.cardealership.repository.ListingRepository;
+import com.example.cardealership.repository.UserRepository;
 import com.example.cardealership.service.car.CarMapper;
 import com.example.cardealership.service.car.CarSpecificationBuilder;
 import com.example.cardealership.service.car.CarValidator;
@@ -19,6 +21,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 @Service
@@ -38,17 +41,30 @@ public class CarService {
 
     private final CarRepository carRepository;
     private final ListingRepository listingRepository;
+    private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
     private final CarValidator carValidator;
     private final CarMapper carMapper;
     private final CarSpecificationBuilder carSpecificationBuilder;
 
     @Transactional
-    public CarDtos.CarResponse create(CarDtos.CreateCarRequest request) {
+    public CarDtos.CarResponse create(CarDtos.CreateCarRequest request, String sellerEmail) {
         carValidator.validateForCreate(request);
+
+        User seller = userRepository.findByEmail(normalizeEmail(sellerEmail))
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", normalizeEmail(sellerEmail)));
 
         Car car = carMapper.toEntity(request);
         Car savedCar = carRepository.save(car);
+
+        Listing listing = Listing.builder()
+                .car(savedCar)
+                .seller(seller)
+                .description(buildDefaultListingDescription(savedCar))
+                .status(Listing.Status.ACTIVE)
+                .build();
+
+        listingRepository.save(listing);
 
         return carMapper.toResponse(savedCar);
     }
@@ -115,6 +131,14 @@ public class CarService {
     private Car findActiveCarEntity(Long id) {
         return carRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Car", "id", id));
+    }
+
+    private String buildDefaultListingDescription(Car car) {
+        return "%s %s listing".formatted(car.getMake(), car.getModel()).trim();
+    }
+
+    private String normalizeEmail(String email) {
+        return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
     }
 
     private String normalizeSortBy(String sortBy) {

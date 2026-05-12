@@ -1,10 +1,14 @@
 package com.example.cardealership.service;
 
+import com.example.cardealership.domain.AuthProvider;
 import com.example.cardealership.domain.Car;
 import com.example.cardealership.domain.Listing;
+import com.example.cardealership.domain.Role;
+import com.example.cardealership.domain.User;
 import com.example.cardealership.dto.CarDtos;
 import com.example.cardealership.repository.CarRepository;
 import com.example.cardealership.repository.ListingRepository;
+import com.example.cardealership.repository.UserRepository;
 import com.example.cardealership.service.car.CarMapper;
 import com.example.cardealership.service.car.CarSpecificationBuilder;
 import com.example.cardealership.service.car.CarValidator;
@@ -39,11 +43,16 @@ class CarServiceTest {
     private ListingRepository listingRepository;
 
     @Mock
+    private UserRepository userRepository;
+
+    @Mock
     private FileStorageService fileStorageService;
 
     private CarService carService;
 
     private Car car;
+
+    private User admin;
 
     @BeforeEach
     void setUp() {
@@ -54,6 +63,7 @@ class CarServiceTest {
         carService = new CarService(
                 carRepository,
                 listingRepository,
+                userRepository,
                 fileStorageService,
                 carValidator,
                 carMapper,
@@ -74,6 +84,13 @@ class CarServiceTest {
                 .ownerCount(1)
                 .deleted(false)
                 .build();
+
+        admin = User.builder()
+                .id(1L)
+                .email("admin@test.com")
+                .role(Role.ADMIN)
+                .authProvider(AuthProvider.LOCAL)
+                .build();
     }
 
     @Test
@@ -83,15 +100,17 @@ class CarServiceTest {
 
         when(carRepository.existsByVin("WBA12345678901234")).thenReturn(true);
 
-        assertThatThrownBy(() -> carService.create(request))
+        assertThatThrownBy(() -> carService.create(request, "admin@test.com"))
                 .isInstanceOf(DuplicateVinException.class)
                 .hasMessage("Car with this VIN already exists");
 
         verify(carRepository, never()).save(any(Car.class));
+        verify(listingRepository, never()).save(any(Listing.class));
+        verify(userRepository, never()).findByEmail(anyString());
     }
 
     @Test
-    void createShouldPersistAndReturnMappedResponse() {
+    void createShouldPersistCarCreateActiveListingAndReturnMappedResponse() {
         CarDtos.CreateCarRequest request = new CarDtos.CreateCarRequest();
         request.setMake("BMW");
         request.setModel("320d");
@@ -105,9 +124,11 @@ class CarServiceTest {
         request.setOwnerCount(1);
 
         when(carRepository.existsByVin("WBA12345678901234")).thenReturn(false);
+        when(userRepository.findByEmail("admin@test.com")).thenReturn(Optional.of(admin));
         when(carRepository.save(any(Car.class))).thenReturn(car);
+        when(listingRepository.save(any(Listing.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        CarDtos.CarResponse response = carService.create(request);
+        CarDtos.CarResponse response = carService.create(request, "admin@test.com");
 
         assertThat(response.getId()).isEqualTo(1L);
         assertThat(response.getMake()).isEqualTo("BMW");
@@ -115,6 +136,34 @@ class CarServiceTest {
         assertThat(response.getYear()).isEqualTo(2020);
 
         verify(carRepository).save(any(Car.class));
+
+        verify(listingRepository).save(argThat(listing ->
+                listing.getCar().equals(car)
+                        && listing.getSeller().equals(admin)
+                        && listing.getStatus() == Listing.Status.ACTIVE
+                        && listing.getDescription().equals("BMW 320d listing")
+        ));
+    }
+
+    @Test
+    void createShouldThrowWhenSellerIsMissing() {
+        CarDtos.CreateCarRequest request = new CarDtos.CreateCarRequest();
+        request.setMake("BMW");
+        request.setModel("320d");
+        request.setYear(2020);
+        request.setMileage(120000L);
+        request.setVin("WBA12345678901234");
+        request.setPrice(new BigDecimal("24500"));
+
+        when(carRepository.existsByVin("WBA12345678901234")).thenReturn(false);
+        when(userRepository.findByEmail("missing@test.com")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> carService.create(request, "missing@test.com"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("User with email 'missing@test.com' was not found.");
+
+        verify(carRepository, never()).save(any(Car.class));
+        verify(listingRepository, never()).save(any(Listing.class));
     }
 
     @Test

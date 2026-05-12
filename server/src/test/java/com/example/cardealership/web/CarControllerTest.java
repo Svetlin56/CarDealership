@@ -28,7 +28,9 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -147,7 +149,8 @@ class CarControllerTest {
                 .price(new BigDecimal("24500"))
                 .build();
 
-        when(carService.create(any(CarDtos.CreateCarRequest.class))).thenReturn(response);
+        when(carService.create(any(CarDtos.CreateCarRequest.class), eq("admin@test.com")))
+                .thenReturn(response);
 
         String payload = """
                 {
@@ -167,5 +170,7 @@ class CarControllerTest {
                 .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.make").value("BMW"));
+
+        verify(carService).create(any(CarDtos.CreateCarRequest.class), eq("admin@test.com"));
     }
 }

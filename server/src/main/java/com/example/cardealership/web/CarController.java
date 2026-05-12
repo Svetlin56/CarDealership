@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,9 +35,10 @@ public class CarController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CarDtos.CarResponse> create(
-            @Valid @RequestBody CarDtos.CreateCarRequest request
+            @Valid @RequestBody CarDtos.CreateCarRequest request,
+            Authentication authentication
     ) {
-        return ResponseEntity.ok(service.create(request));
+        return ResponseEntity.ok(service.create(request, authentication.getName()));
     }
 
     @PreAuthorize("hasRole('ADMIN')")

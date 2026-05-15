@@ -33,6 +33,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -83,6 +84,7 @@ class AuthControllerTest {
                 .thenReturn(new AuthResponse("jwt-token", "user@test.com", "USER", null));
 
         mockMvc.perform(post("/api/v1/auth/register")
+                        .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content("""
                                 {
@@ -105,6 +107,7 @@ class AuthControllerTest {
                 .thenReturn(new AuthResponse("admin-token", "admin@test.com", "ADMIN", null));
 
         mockMvc.perform(post("/api/v1/auth/login")
+                        .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content("""
                                 {
@@ -127,6 +130,7 @@ class AuthControllerTest {
                 .thenThrow(new BadCredentialsException("Bad credentials"));
 
         mockMvc.perform(post("/api/v1/auth/login")
+                        .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content("""
                                 {
@@ -142,6 +146,7 @@ class AuthControllerTest {
     @Test
     void registerShouldReturnValidationErrorsForInvalidPayload() throws Exception {
         mockMvc.perform(post("/api/v1/auth/register")
+                        .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content("""
                                 {

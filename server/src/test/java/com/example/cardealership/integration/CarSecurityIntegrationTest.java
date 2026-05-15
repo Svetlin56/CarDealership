@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -60,6 +61,7 @@ class CarSecurityIntegrationTest extends AbstractMySqlIntegrationTest {
     @Test
     void createCarShouldReturnUnauthorizedWithoutJwt() throws Exception {
         mockMvc.perform(post("/api/v1/cars")
+                        .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content(validPayload()))
                 .andExpect(status().isUnauthorized());
@@ -70,6 +72,7 @@ class CarSecurityIntegrationTest extends AbstractMySqlIntegrationTest {
         String token = jwtService.generateToken("user@test.com", "USER");
 
         mockMvc.perform(post("/api/v1/cars")
+                        .with(csrf())
                         .header(AUTHORIZATION, "Bearer " + token)
                         .contentType(APPLICATION_JSON)
                         .content(validPayload()))
@@ -81,6 +84,7 @@ class CarSecurityIntegrationTest extends AbstractMySqlIntegrationTest {
         String token = jwtService.generateToken("admin@test.com", "ADMIN");
 
         mockMvc.perform(post("/api/v1/cars")
+                        .with(csrf())
                         .header(AUTHORIZATION, "Bearer " + token)
                         .contentType(APPLICATION_JSON)
                         .content(validPayload()))
@@ -94,6 +98,7 @@ class CarSecurityIntegrationTest extends AbstractMySqlIntegrationTest {
         String token = jwtService.generateToken("admin@test.com", "ADMIN");
 
         mockMvc.perform(post("/api/v1/cars")
+                        .with(csrf())
                         .header(AUTHORIZATION, "Bearer " + token)
                         .contentType(APPLICATION_JSON)
                         .content("""

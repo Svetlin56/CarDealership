@@ -34,6 +34,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -112,6 +113,7 @@ class ListingControllerTest {
         request.setDescription("Perfect family car");
 
         mockMvc.perform(post("/api/v1/listings")
+                        .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -131,6 +133,7 @@ class ListingControllerTest {
                 """;
 
         mockMvc.perform(post("/api/v1/listings")
+                        .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isForbidden());
@@ -160,6 +163,7 @@ class ListingControllerTest {
                 .thenReturn(response);
 
         mockMvc.perform(patch("/api/v1/listings/12/status")
+                        .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content("{\"status\":\"sold\"}"))
                 .andExpect(status().isOk())

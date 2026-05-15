@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -27,6 +28,7 @@ class AuthIntegrationTest extends AbstractMySqlIntegrationTest {
     @Test
     void registerShouldPersistUserAndReturnJwt() throws Exception {
         mockMvc.perform(post("/api/v1/auth/register")
+                        .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content("""
                                 {
@@ -45,6 +47,7 @@ class AuthIntegrationTest extends AbstractMySqlIntegrationTest {
     @Test
     void registerShouldReturnConflictWhenEmailAlreadyExists() throws Exception {
         mockMvc.perform(post("/api/v1/auth/register")
+                        .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content("""
                                 {
@@ -55,6 +58,7 @@ class AuthIntegrationTest extends AbstractMySqlIntegrationTest {
                 .andExpect(status().isOk());
 
         mockMvc.perform(post("/api/v1/auth/register")
+                        .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content("""
                                 {

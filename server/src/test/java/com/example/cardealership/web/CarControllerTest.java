@@ -33,6 +33,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -133,6 +134,7 @@ class CarControllerTest {
                 """;
 
         mockMvc.perform(post("/api/v1/cars")
+                        .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isForbidden());
@@ -164,6 +166,7 @@ class CarControllerTest {
                 """;
 
         mockMvc.perform(post("/api/v1/cars")
+                        .with(csrf())
                         .contentType(APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isOk())

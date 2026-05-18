@@ -16,6 +16,21 @@ import java.math.BigDecimal;
 @Builder
 public class MlRecommendationRequest {
 
+    @JsonProperty("car_id")
+    private Long carId;
+
+    @JsonProperty("listing_id")
+    private Long listingId;
+
+    @JsonProperty("listing_status")
+    private String listingStatus;
+
+    @JsonProperty("listing_description")
+    private String listingDescription;
+
+    @JsonProperty("image_url")
+    private String imageUrl;
+
     @JsonProperty("Year")
     private Integer year;
 

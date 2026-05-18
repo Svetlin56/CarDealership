@@ -1,6 +1,7 @@
 {
   "model_name": "car_price_prediction",
-  "version": "2.0",
+  "version": "2.1",
+  "currency": "EUR",
   "features": [
     {
       "name": "Brand",
@@ -48,9 +49,48 @@
       "description": "Number of previous owners"
     }
   ],
+  "passthrough_fields": [
+    {
+      "name": "car_id",
+      "type": "integer",
+      "description": "Application car identifier. Not used by the model, returned with recommendations for UI navigation."
+    },
+    {
+      "name": "listing_id",
+      "type": "integer",
+      "description": "Application listing identifier. Not used by the model, returned with recommendations for inquiries."
+    },
+    {
+      "name": "listing_status",
+      "type": "string",
+      "description": "Listing status supplied by the backend. Recommendation endpoints should receive active listings only."
+    },
+    {
+      "name": "listing_description",
+      "type": "string",
+      "description": "Optional listing text displayed by the UI. Not used by the model."
+    },
+    {
+      "name": "image_url",
+      "type": "string",
+      "description": "Optional application image URL. Not used by the model."
+    }
+  ],
   "target": {
     "name": "Price",
     "type": "number",
     "description": "Car price in EUR"
-  }
+  },
+  "outputs": [
+    "predicted_price",
+    "score",
+    "value_score",
+    "good_deal",
+    "anomaly_ratio",
+    "anomaly_label",
+    "car_type",
+    "confidence",
+    "explanation",
+    "recommendation_source"
+  ]
 }

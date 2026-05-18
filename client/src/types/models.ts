@@ -31,10 +31,12 @@ export type SellerSummary = {
     email: string;
 };
 
+export type ListingStatus = "ACTIVE" | "SOLD" | "HIDDEN";
+
 export type Listing = {
     id: number;
     description?: string;
-    status: "ACTIVE" | "SOLD" | "HIDDEN";
+    status: ListingStatus;
     createdAt: string;
     car: Car;
     seller: SellerSummary;
@@ -57,7 +59,16 @@ export type AdminInquiry = InquiryResponse & {
     createdAt: string;
 };
 
+export type MlAnomalyLabel = "OVERPRICED" | "UNDERVALUED" | "FAIR" | "UNKNOWN";
+export type RecommendationSource = "ML" | "FALLBACK";
+
 export type MlRecommendationApiResponse = {
+    car_id?: number | null;
+    listing_id?: number | null;
+    listing_status?: ListingStatus | string | null;
+    listing_description?: string | null;
+    image_url?: string | null;
+    recommendation_source?: RecommendationSource | string | null;
     Year: number;
     Engine_Size: number;
     Fuel_Type: string;
@@ -73,13 +84,19 @@ export type MlRecommendationApiResponse = {
     value_score: number;
     good_deal: boolean;
     anomaly_ratio: number;
-    anomaly_label: "OVERPRICED" | "UNDERVALUED" | "FAIR" | "UNKNOWN";
+    anomaly_label: MlAnomalyLabel;
     car_type: string;
     confidence: number;
     explanation: string;
 };
 
 export type MlRecommendation = {
+    carId?: number;
+    listingId?: number;
+    listingStatus?: ListingStatus | string;
+    listingDescription?: string;
+    imageUrl?: string;
+    recommendationSource: RecommendationSource | string;
     year: number;
     engineSize: number;
     fuelType: string;
@@ -95,7 +112,7 @@ export type MlRecommendation = {
     valueScore: number;
     goodDeal: boolean;
     anomalyRatio: number;
-    anomalyLabel: "OVERPRICED" | "UNDERVALUED" | "FAIR" | "UNKNOWN";
+    anomalyLabel: MlAnomalyLabel;
     carType: string;
     confidence: number;
     explanation: string;

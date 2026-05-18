@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask, request, jsonify
 import json
 import joblib
@@ -131,18 +133,18 @@ def explain(row):
     reasons = []
 
     if row["Mileage"] < 60000:
-        reasons.append("Low mileage")
+        reasons.append("low mileage")
 
     if row["Year"] > 2018:
-        reasons.append("Newer car")
+        reasons.append("newer production year")
 
     if row["predicted_price"] > row["price"]:
-        reasons.append("Good price vs market")
+        reasons.append("listed below estimated market value")
 
     if not reasons:
-        reasons.append("Balanced overall characteristics")
+        reasons.append("balanced overall characteristics")
 
-    return ", ".join(reasons)
+    return "Recommended because of " + ", ".join(reasons) + "."
 
 
 def validate_record(record):
@@ -208,7 +210,9 @@ def sanitize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
 def to_native_types(records):
     for record in records:
         for key, value in record.items():
-            if isinstance(value, (np.float32, np.float64)):
+            if pd.isna(value):
+                record[key] = None
+            elif isinstance(value, (np.float32, np.float64)):
                 record[key] = float(value)
             elif isinstance(value, (np.int32, np.int64)):
                 record[key] = int(value)
@@ -253,6 +257,9 @@ def recommend():
         if not isinstance(data, list):
             return jsonify({"error": "Expected a JSON array"}), 400
 
+        if len(data) == 0:
+            return jsonify([])
+
         df = pd.DataFrame(data)
         df = sanitize_dataframe(df)
 
@@ -281,6 +288,7 @@ def recommend():
         df["confidence"] = (1 - abs(df["anomaly_ratio"])).clip(lower=0, upper=1).round(2)
         df["car_type"] = df.apply(classify_car, axis=1)
         df["explanation"] = df.apply(explain, axis=1)
+        df["recommendation_source"] = "ML"
 
         df = df.sort_values(by="value_score", ascending=False)
 
@@ -320,4 +328,11 @@ def health():
 
 
 if __name__ == "__main__":
-    app.run(debug=False, port=5000)
+    port = int(os.getenv("PORT", "5000"))
+    debug = os.getenv("FLASK_DEBUG", "true").lower() == "true"
+
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=debug
+    )

@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import http, { API_BASE_URL } from "../api/http";
 import { InquiryRequest, InquiryResponse, Listing } from "../types/models";
+import { formatCurrency, formatNumber } from "../utils/currency";
 
 const INITIAL_INQUIRY: InquiryRequest = {
     name: "",
@@ -14,6 +15,27 @@ type ApiErrorResponse = {
     message?: string;
     fieldErrors?: Record<string, string>;
 };
+
+function resolveImageUrl(imageUrl?: string): string | null {
+    if (!imageUrl) {
+        return null;
+    }
+
+    return imageUrl.startsWith("http") ? imageUrl : `${API_BASE_URL}${imageUrl}`;
+}
+
+function getStatusBadgeClass(status: string): string {
+    switch (status) {
+        case "ACTIVE":
+            return "text-bg-success";
+        case "SOLD":
+            return "text-bg-danger";
+        case "HIDDEN":
+            return "text-bg-secondary";
+        default:
+            return "text-bg-light";
+    }
+}
 
 export default function CarDetails() {
     const { id } = useParams();
@@ -57,7 +79,7 @@ export default function CarDetails() {
             }
         };
 
-        loadListing();
+        void loadListing();
     }, [id]);
 
     const updateInquiry = (field: keyof InquiryRequest, value: string) => {
@@ -93,7 +115,11 @@ export default function CarDetails() {
     };
 
     if (loading) {
-        return <p>Loading...</p>;
+        return (
+            <div className="container mt-4">
+                <div className="alert alert-info" role="status">Loading listing details...</div>
+            </div>
+        );
     }
 
     if (error) {
@@ -119,30 +145,29 @@ export default function CarDetails() {
     }
 
     const car = listing.car;
-    const imageSrc = car.imageUrl
-        ? car.imageUrl.startsWith("http")
-            ? car.imageUrl
-            : `${API_BASE_URL}${car.imageUrl}`
-        : null;
+    const imageSrc = resolveImageUrl(car.imageUrl);
+    const carTitle = `${car.make} ${car.model}`;
 
     return (
-        <div className="container mt-4">
+        <div className="container mt-4 car-details-page">
             <div className="row g-4">
-                <div className="col-md-7">
-                    {imageSrc ? (
-                        <img
-                            className="img-fluid rounded mb-3"
-                            src={imageSrc}
-                            alt={`${car.make} ${car.model}`}
-                        />
-                    ) : (
-                        <div className="border rounded p-5 text-center text-muted">
-                            No image available
-                        </div>
-                    )}
+                <div className="col-lg-7">
+                    <div className="car-details-image-wrapper bg-light rounded border">
+                        {imageSrc ? (
+                            <img
+                                className="img-fluid rounded car-details-image"
+                                src={imageSrc}
+                                alt={carTitle}
+                            />
+                        ) : (
+                            <div className="car-details-placeholder text-muted">
+                                No image available
+                            </div>
+                        )}
+                    </div>
 
                     {listing.description && (
-                        <div className="card mt-3">
+                        <div className="card border-0 shadow-sm mt-3">
                             <div className="card-body">
                                 <h5 className="card-title">Listing description</h5>
                                 <p className="card-text mb-0">{listing.description}</p>
@@ -151,25 +176,59 @@ export default function CarDetails() {
                     )}
                 </div>
 
-                <div className="col-md-5">
-                    <h2>
-                        {car.make} {car.model}
-                    </h2>
+                <div className="col-lg-5">
+                    <div className="card border-0 shadow-sm mb-3">
+                        <div className="card-body">
+                            <div className="d-flex justify-content-between gap-3 align-items-start mb-3">
+                                <div>
+                                    <h2 className="mb-1">{carTitle}</h2>
+                                    <p className="text-muted mb-0">
+                                        {car.year} · {car.fuelType || "N/A"} · {car.transmission || "N/A"}
+                                    </p>
+                                </div>
 
-                    <p>Status: <strong>{listing.status}</strong></p>
-                    <p>Year: {car.year}</p>
-                    <p>Mileage: {car.mileage?.toLocaleString() ?? "N/A"} km</p>
-                    <p>Fuel type: {car.fuelType || "N/A"}</p>
-                    <p>Transmission: {car.transmission || "N/A"}</p>
-                    <p>Engine size: {car.engineSize ?? "N/A"} L</p>
-                    <p>Doors: {car.doors ?? "N/A"}</p>
-                    <p>Owner count: {car.ownerCount ?? "N/A"}</p>
+                                <span className={`badge ${getStatusBadgeClass(listing.status)}`}>
+                                    {listing.status}
+                                </span>
+                            </div>
 
-                    <h4 className="text-success">{car.price.toLocaleString()} €</h4>
+                            <h3 className="text-success mb-4">{formatCurrency(car.price)}</h3>
 
-                    <div className="card mt-4">
+                            <div className="car-details-spec-grid">
+                                <div>
+                                    <span className="text-muted small d-block">Mileage</span>
+                                    <strong>{formatNumber(car.mileage)} km</strong>
+                                </div>
+                                <div>
+                                    <span className="text-muted small d-block">Engine</span>
+                                    <strong>{car.engineSize ?? "N/A"} L</strong>
+                                </div>
+                                <div>
+                                    <span className="text-muted small d-block">Doors</span>
+                                    <strong>{car.doors ?? "N/A"}</strong>
+                                </div>
+                                <div>
+                                    <span className="text-muted small d-block">Owner count</span>
+                                    <strong>{car.ownerCount ?? "N/A"}</strong>
+                                </div>
+                                <div>
+                                    <span className="text-muted small d-block">VIN</span>
+                                    <strong>{car.vin || "N/A"}</strong>
+                                </div>
+                                <div>
+                                    <span className="text-muted small d-block">Listing created</span>
+                                    <strong>{new Date(listing.createdAt).toLocaleDateString()}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="card border-0 shadow-sm" id="inquiry">
                         <div className="card-body">
                             <h5 className="card-title">Send inquiry</h5>
+                            <p className="text-muted small">
+                                Ask the dealership about availability, inspection history or test-drive options.
+                            </p>
 
                             {submitSuccess && (
                                 <div className="alert alert-success py-2">{submitSuccess}</div>
@@ -234,7 +293,7 @@ export default function CarDetails() {
                                     )}
                                 </div>
 
-                                <button className="btn btn-primary w-100" type="submit" disabled={submitting}>
+                                <button className="btn btn-primary w-100" type="submit" disabled={submitting || listing.status !== "ACTIVE"}>
                                     {submitting ? "Sending..." : "Send inquiry"}
                                 </button>
                             </form>

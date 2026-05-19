@@ -8,7 +8,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.*;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
@@ -19,12 +18,11 @@ public class FileStorageService {
 
     private static final long MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
     private static final int MAGIC_BYTES_LENGTH = 12;
-    private static final Set<String> ALLOWED_EXTENSIONS = Set.of("jpg", "jpeg", "png", "webp", "gif");
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of("jpg", "jpeg", "png", "webp");
     private static final Map<String, Set<String>> EXTENSIONS_BY_IMAGE_TYPE = Map.of(
             "jpeg", Set.of("jpg", "jpeg"),
             "png", Set.of("png"),
-            "webp", Set.of("webp"),
-            "gif", Set.of("gif")
+            "webp", Set.of("webp")
     );
 
     private final Path carImagesDirectory;
@@ -85,7 +83,7 @@ public class FileStorageService {
 
         String extension = getExtension(file.getOriginalFilename());
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
-            throw new BusinessValidationException("Only JPG, JPEG, PNG, WEBP or GIF images are allowed.");
+            throw new BusinessValidationException("Only JPG, JPEG, PNG or WEBP images are allowed.");
         }
 
         String detectedImageType = detectImageType(file);
@@ -110,10 +108,6 @@ public class FileStorageService {
 
         if (isWebp(magicBytes)) {
             return "webp";
-        }
-
-        if (isGif(magicBytes)) {
-            return "gif";
         }
 
         throw new BusinessValidationException("The uploaded file is not a valid image.");
@@ -156,11 +150,6 @@ public class FileStorageService {
                 && bytes[9] == 'E'
                 && bytes[10] == 'B'
                 && bytes[11] == 'P';
-    }
-
-    private boolean isGif(byte[] bytes) {
-        return startsWith(bytes, "GIF87a".getBytes(StandardCharsets.US_ASCII))
-                || startsWith(bytes, "GIF89a".getBytes(StandardCharsets.US_ASCII));
     }
 
     private boolean startsWith(byte[] bytes, byte[] signature) {

@@ -23,7 +23,8 @@ public class CarValidator {
                 request.getMileage(),
                 request.getPrice(),
                 request.getOwnerCount(),
-                request.getEngineSize()
+                request.getEngineSize(),
+                request.getImageUrl()
         );
 
         String normalizedVin = carMapper.normalizeVin(request.getVin());
@@ -38,7 +39,8 @@ public class CarValidator {
                 request.getMileage(),
                 request.getPrice(),
                 request.getOwnerCount(),
-                request.getEngineSize()
+                request.getEngineSize(),
+                request.getImageUrl()
         );
 
         String normalizedVin = carMapper.normalizeVin(request.getVin());
@@ -52,7 +54,8 @@ public class CarValidator {
             Long mileage,
             BigDecimal price,
             Integer ownerCount,
-            BigDecimal engineSize
+            BigDecimal engineSize,
+            String imageUrl
     ) {
         int currentYear = Year.now().getValue();
 
@@ -78,6 +81,24 @@ public class CarValidator {
 
         if (year != null && mileage != null && year >= currentYear - 1 && mileage > 300_000L) {
             throw new BusinessValidationException("Mileage is too high for such a recent vehicle.");
+        }
+
+        validateStoredImagePath(imageUrl);
+    }
+
+    private void validateStoredImagePath(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return;
+        }
+
+        String normalized = imageUrl.trim();
+        if (!normalized.startsWith("/uploads/cars/")) {
+            throw new BusinessValidationException("Image must be uploaded through the dashboard image file field.");
+        }
+
+        String filename = normalized.substring("/uploads/cars/".length());
+        if (filename.isBlank() || filename.contains("/") || filename.contains("\\") || filename.contains("..")) {
+            throw new BusinessValidationException("Invalid uploaded image path.");
         }
     }
 }

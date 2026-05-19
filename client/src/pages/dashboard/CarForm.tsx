@@ -188,11 +188,11 @@ export default function CarForm({
                 <input
                     type="file"
                     className="form-control"
-                    accept=".jpg,.jpeg,.png,.webp,.gif"
+                    accept=".jpg,.jpeg,.png,.webp"
                     onChange={e => onImageChange(e.target.files?.[0] ?? null)}
                 />
                 <div className="form-text">
-                    Allowed: JPG, JPEG, PNG, WEBP, GIF. Max size: 5 MB.
+                    Allowed: JPG, JPEG, PNG, WEBP. Max size: 5 MB.
                 </div>
                 {selectedImage && (
                     <div className="form-text">
@@ -200,14 +200,6 @@ export default function CarForm({
                     </div>
                 )}
             </div>
-
-            <FormField
-                label="Image (URL)"
-                name="imageUrl"
-                value={form.imageUrl}
-                onChange={handleChange}
-                error={errors.imageUrl}
-            />
 
             {errors.general && (
                 <div className="alert alert-danger py-2">{errors.general}</div>

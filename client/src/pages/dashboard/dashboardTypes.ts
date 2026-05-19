@@ -5,7 +5,6 @@ export type CarFormValues = {
     mileage: number;
     vin: string;
     price: number;
-    imageUrl: string;
     transmission: string;
     fuelType: string;
     engineSize: string;

@@ -12,6 +12,7 @@ export default function Dashboard() {
     const [form, setForm] = useState<CarFormValues>(INITIAL_CAR_FORM);
     const [errors, setErrors] = useState<DashboardErrors>({});
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [editingCarId, setEditingCarId] = useState<number | null>(null);
 
@@ -20,13 +21,14 @@ export default function Dashboard() {
     const resetForm = () => {
         setForm(INITIAL_CAR_FORM);
         setSelectedImage(null);
+        setCurrentImageUrl(null);
         setEditingCarId(null);
         setErrors({});
     };
 
     const uploadImage = async (): Promise<string | null> => {
         if (!selectedImage) {
-            return form.imageUrl?.trim() || null;
+            return currentImageUrl;
         }
 
         const formData = new FormData();
@@ -76,6 +78,7 @@ export default function Dashboard() {
         setEditingCarId(car.id);
         setForm(toCarFormValues(car));
         setSelectedImage(null);
+        setCurrentImageUrl(car.imageUrl ?? null);
         setErrors({});
         window.scrollTo({ top: 0, behavior: "smooth" });
     };

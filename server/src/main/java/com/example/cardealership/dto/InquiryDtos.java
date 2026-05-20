@@ -12,17 +12,23 @@ public class InquiryDtos {
     public static class InquiryRequest {
 
         @NotBlank(message = "Name is required")
+        @Size(min = 2, max = 80, message = "Name must be between 2 and 80 characters")
+        @Pattern(
+                regexp = "^\\s*[\\p{L}]+(?:[ '\\-][\\p{L}]+)*\\s*$",
+                message = "Name must contain only letters, spaces, - or '"
+        )
         private String name;
 
         @Email(message = "Email must be valid")
         @NotBlank(message = "Email is required")
         private String email;
 
-        @Pattern(
-                regexp="^[+0-9\\- ]{6,20}$",
-                message = "Phone must contain only digits, spaces, + or -"
-        )
         @NotBlank(message = "Phone is required")
+        @Size(max = 64, message = "Phone must contain between 7 and 15 digits and may include spaces, + or -")
+        @Pattern(
+                regexp = "^\\s*(?=(?:\\D*\\d){7,15}\\D*$)\\+?[0-9][0-9\\- ]*\\s*$",
+                message = "Phone must contain between 7 and 15 digits and may include spaces, + or -"
+        )
         private String phone;
 
         @Size(max = 2000, message = "Message must be up to 2000 characters")

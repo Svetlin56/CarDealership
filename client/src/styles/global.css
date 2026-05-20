@@ -281,3 +281,8 @@ img { object-fit: cover; }
         min-height: 260px;
     }
 }
+
+.phone-code-select {
+    max-width: 115px;
+    flex: 0 0 115px;
+}

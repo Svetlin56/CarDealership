@@ -49,9 +49,68 @@ export default function Dashboard() {
         }
     };
 
+    const validateBeforeSubmit = () => {
+        const nextErrors: DashboardErrors = {};
+
+        if (!form.make) {
+            nextErrors.make = "Make is required";
+        }
+
+        if (!form.model) {
+            nextErrors.model = "Model is required";
+        }
+
+        if (!form.year) {
+            nextErrors.year = "Year is required";
+        }
+
+        if (form.mileage === null || form.mileage === undefined || Number.isNaN(Number(form.mileage))) {
+            nextErrors.mileage = "Mileage is required";
+        }
+
+        if (!form.vin || form.vin.length !== 17) {
+            nextErrors.vin = "VIN must be exactly 17 characters";
+        }
+
+        if (!form.price || Number(form.price) <= 0) {
+            nextErrors.price = "Price must be greater than zero";
+        }
+
+        if (!form.transmission) {
+            nextErrors.transmission = "Transmission is required";
+        }
+
+        if (!form.fuelType) {
+            nextErrors.fuelType = "Fuel type is required";
+        }
+
+        if (!form.engineSize) {
+            nextErrors.engineSize = "Engine size is required";
+        }
+
+        if (!form.doors) {
+            nextErrors.doors = "Doors are required";
+        }
+
+        if (form.ownerCount === "") {
+            nextErrors.ownerCount = "Owner count is required";
+        }
+
+        if (!selectedImage && !currentImageUrl) {
+            nextErrors.imageUrl = "Image file is required";
+        }
+
+        setErrors(nextErrors);
+        return Object.keys(nextErrors).length === 0;
+    };
+
     const submitCar = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setErrors({});
+
+        if (!validateBeforeSubmit()) {
+            return;
+        }
 
         try {
             const uploadedImageUrl = await uploadImage();
@@ -108,6 +167,7 @@ export default function Dashboard() {
                     selectedImage={selectedImage}
                     uploadingImage={uploadingImage}
                     editing={Boolean(editingCarId)}
+                    hasCurrentImage={Boolean(currentImageUrl)}
                     onChange={nextForm => {
                         setForm(nextForm);
                         setErrors(prev => ({ ...prev, general: "" }));

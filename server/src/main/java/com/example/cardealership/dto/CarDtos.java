@@ -39,19 +39,25 @@ public class CarDtos {
         @DecimalMin(value = "0.01", inclusive = true, message = "Price must be greater than zero")
         private BigDecimal price;
 
+        @NotBlank(message = "Image file is required")
         private String imageUrl;
 
+        @NotNull(message = "Engine size is required")
         @DecimalMin(value = "0.1", inclusive = true, message = "Engine size must be positive")
         private BigDecimal engineSize;
 
+        @NotBlank(message = "Fuel type is required")
         private String fuelType;
 
+        @NotBlank(message = "Transmission is required")
         private String transmission;
 
+        @NotNull(message = "Doors are required")
         @Min(value = 2, message = "Doors must be at least 2")
         @Max(value = 6, message = "Doors must be at most 6")
         private Integer doors;
 
+        @NotNull(message = "Owner count is required")
         @Min(value = 0, message = "Owner count cannot be negative")
         private Integer ownerCount;
     }
@@ -86,19 +92,25 @@ public class CarDtos {
         @DecimalMin(value = "0.01", inclusive = true, message = "Price must be greater than zero")
         private BigDecimal price;
 
+        @NotBlank(message = "Image file is required")
         private String imageUrl;
 
+        @NotNull(message = "Engine size is required")
         @DecimalMin(value = "0.1", inclusive = true, message = "Engine size must be positive")
         private BigDecimal engineSize;
 
+        @NotBlank(message = "Fuel type is required")
         private String fuelType;
 
+        @NotBlank(message = "Transmission is required")
         private String transmission;
 
+        @NotNull(message = "Doors are required")
         @Min(value = 2, message = "Doors must be at least 2")
         @Max(value = 6, message = "Doors must be at most 6")
         private Integer doors;
 
+        @NotNull(message = "Owner count is required")
         @Min(value = 0, message = "Owner count cannot be negative")
         private Integer ownerCount;
     }

@@ -122,21 +122,10 @@ class CarControllerTest {
     @Test
     @WithMockUser(username = "user@test.com", roles = "USER")
     void nonAdminShouldNotCreateCars() throws Exception {
-        String payload = """
-                {
-                  "make": "BMW",
-                  "model": "320d",
-                  "year": 2020,
-                  "mileage": 120000,
-                  "vin": "WBA12345678901234",
-                  "price": 24500
-                }
-                """;
-
         mockMvc.perform(post("/api/v1/cars")
                         .with(csrf())
                         .contentType(APPLICATION_JSON)
-                        .content(payload))
+                        .content(validPayload()))
                 .andExpect(status().isForbidden());
     }
 
@@ -154,26 +143,34 @@ class CarControllerTest {
         when(carService.create(any(CarDtos.CreateCarRequest.class), eq("admin@test.com")))
                 .thenReturn(response);
 
-        String payload = """
-                {
-                  "make": "BMW",
-                  "model": "320d",
-                  "year": 2020,
-                  "mileage": 120000,
-                  "vin": "WBA12345678901234",
-                  "price": 24500
-                }
-                """;
-
         mockMvc.perform(post("/api/v1/cars")
                         .with(csrf())
                         .contentType(APPLICATION_JSON)
-                        .content(payload))
+                        .content(validPayload()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.make").value("BMW"));
 
         verify(carService).create(any(CarDtos.CreateCarRequest.class), eq("admin@test.com"));
+    }
+
+    private String validPayload() {
+        return """
+                {
+                  "make": "BMW",
+                  "model": "320d",
+                  "year": 2020,
+                  "mileage": 120000,
+                  "vin": "WBA12345678901234",
+                  "price": 24500,
+                  "imageUrl": "/uploads/cars/test-car.jpg",
+                  "engineSize": 2.0,
+                  "fuelType": "Diesel",
+                  "transmission": "Automatic",
+                  "doors": 4,
+                  "ownerCount": 1
+                }
+                """;
     }
 }

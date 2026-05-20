@@ -85,8 +85,8 @@ public class MlRecommendationResponse {
     @JsonProperty("car_type")
     private String carType;
 
-    @JsonProperty("confidence")
-    private Double confidence;
+    @JsonProperty("market_match")
+    private Double marketMatch;
 
     @JsonProperty("explanation")
     private String explanation;

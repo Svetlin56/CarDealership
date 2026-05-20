@@ -285,7 +285,7 @@ def recommend():
         df["anomaly_ratio"] = anomaly["anomaly_ratio"]
         df["anomaly_label"] = anomaly["anomaly_label"]
         df["good_deal"] = df["predicted_price"] > df["price"]
-        df["confidence"] = (1 - abs(df["anomaly_ratio"])).clip(lower=0, upper=1).round(2)
+        df["market_match"] = (1 - abs(df["anomaly_ratio"])).clip(lower=0, upper=1).round(2)
         df["car_type"] = df.apply(classify_car, axis=1)
         df["explanation"] = df.apply(explain, axis=1)
         df["recommendation_source"] = "ML"

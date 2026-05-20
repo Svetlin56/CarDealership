@@ -10,6 +10,7 @@ type Props = {
     selectedImage: File | null;
     uploadingImage: boolean;
     editing: boolean;
+    hasCurrentImage: boolean;
     onChange: (nextForm: CarFormValues) => void;
     onImageChange: (file: File | null) => void;
     onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
@@ -22,6 +23,7 @@ export default function CarForm({
                                     selectedImage,
                                     uploadingImage,
                                     editing,
+                                    hasCurrentImage,
                                     onChange,
                                     onImageChange,
                                     onSubmit,
@@ -104,6 +106,7 @@ export default function CarForm({
                 name="mileage"
                 value={form.mileage}
                 onChange={handleChange}
+                required
                 min={0}
                 error={errors.mileage}
             />
@@ -113,6 +116,7 @@ export default function CarForm({
                 name="vin"
                 value={form.vin}
                 onChange={handleChange}
+                required
                 error={errors.vin}
                 maxLength={17}
             />
@@ -133,6 +137,7 @@ export default function CarForm({
                 name="transmission"
                 value={form.transmission}
                 onChange={handleChange}
+                required
                 as="select"
                 options={TRANSMISSION_OPTIONS}
                 placeholder="Select Transmission"
@@ -144,6 +149,7 @@ export default function CarForm({
                 name="fuelType"
                 value={form.fuelType}
                 onChange={handleChange}
+                required
                 as="select"
                 options={FUEL_TYPE_OPTIONS}
                 placeholder="Select Fuel Type"
@@ -156,6 +162,7 @@ export default function CarForm({
                 name="engineSize"
                 value={form.engineSize}
                 onChange={handleChange}
+                required
                 min={0.9}
                 placeholder="e.g. 2.0"
                 error={errors.engineSize}
@@ -167,6 +174,7 @@ export default function CarForm({
                 name="doors"
                 value={form.doors}
                 onChange={handleChange}
+                required
                 min={2}
                 placeholder="e.g. 4"
                 error={errors.doors}
@@ -178,6 +186,7 @@ export default function CarForm({
                 name="ownerCount"
                 value={form.ownerCount}
                 onChange={handleChange}
+                required
                 min={0}
                 placeholder="e.g. 1"
                 error={errors.ownerCount}
@@ -187,16 +196,30 @@ export default function CarForm({
                 <label className="form-label">Image file</label>
                 <input
                     type="file"
-                    className="form-control"
+                    className={`form-control ${errors.imageUrl ? "is-invalid" : ""}`}
                     accept=".jpg,.jpeg,.png,.webp"
+                    required={!editing || !hasCurrentImage}
                     onChange={e => onImageChange(e.target.files?.[0] ?? null)}
                 />
                 <div className="form-text">
                     Allowed: JPG, JPEG, PNG, WEBP. Max size: 5 MB.
                 </div>
+
                 {selectedImage && (
                     <div className="form-text">
                         Selected: {selectedImage.name}
+                    </div>
+                )}
+
+                {editing && hasCurrentImage && !selectedImage && (
+                    <div className="form-text">
+                        Existing image will be kept unless a new file is selected.
+                    </div>
+                )}
+
+                {errors.imageUrl && (
+                    <div className="invalid-feedback">
+                        {errors.imageUrl}
                     </div>
                 )}
             </div>
@@ -204,7 +227,6 @@ export default function CarForm({
             {errors.general && (
                 <div className="alert alert-danger py-2">{errors.general}</div>
             )}
-
             {/* From Uiverse.io by cssbuttons-io */}
             <div className="d-flex gap-2 align-items-center">
                 <button className="save-button" disabled={uploadingImage}>

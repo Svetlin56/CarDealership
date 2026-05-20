@@ -176,7 +176,7 @@ public class MlRecommendationService {
                 .anomalyRatio(0.0)
                 .anomalyLabel("UNKNOWN")
                 .carType(classifyCar(car))
-                .confidence(0.0)
+                .marketMatch(0.0)
                 .explanation("Fallback recommendation based on active listing status, production year, mileage and owner count.")
                 .build();
     }

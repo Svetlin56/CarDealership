@@ -29,7 +29,7 @@ const recommendation = {
     anomaly_ratio: -0.0545,
     anomaly_label: "FAIR",
     car_type: "FAMILY",
-    confidence: 0.95,
+    market_match: 0.95,
     explanation: "Good price vs market"
 };
 

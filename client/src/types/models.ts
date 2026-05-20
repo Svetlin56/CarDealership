@@ -86,7 +86,7 @@ export type MlRecommendationApiResponse = {
     anomaly_ratio: number;
     anomaly_label: MlAnomalyLabel;
     car_type: string;
-    confidence: number;
+    market_match: number;
     explanation: string;
 };
 
@@ -114,7 +114,7 @@ export type MlRecommendation = {
     anomalyRatio: number;
     anomalyLabel: MlAnomalyLabel;
     carType: string;
-    confidence: number;
+    marketMatch: number;
     explanation: string;
 };
 

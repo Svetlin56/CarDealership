@@ -54,7 +54,7 @@ function toRecommendation(car: MlRecommendationApiResponse): MlRecommendation {
         anomalyRatio: car.anomaly_ratio,
         anomalyLabel: car.anomaly_label,
         carType: car.car_type,
-        confidence: car.confidence,
+        marketMatch: car.market_match,
         explanation: car.explanation
     };
 }
@@ -134,16 +134,12 @@ function getDealLabel(car: MlRecommendation): string {
     return "Market estimate";
 }
 
-function getConfidenceLabel(confidence: number): string {
-    if (confidence >= 0.75) {
-        return "High confidence";
+function getMarketMatchLabel(marketMatch: number): string {
+    if (marketMatch === undefined || marketMatch === null || Number.isNaN(marketMatch)) {
+        return "Market match: N/A";
     }
 
-    if (confidence >= 0.5) {
-        return "Medium confidence";
-    }
-
-    return "Low confidence";
+    return `Market match: ${Math.round(marketMatch * 100)}%`;
 }
 
 function buildMarketMessage(car: MlRecommendation): string {
@@ -463,7 +459,7 @@ export default function Recommendations() {
 
                                         <div className="d-flex flex-wrap gap-2 mb-3">
                                             <span className="badge text-bg-light border">{car.carType}</span>
-                                            <span className="badge text-bg-light border">{getConfidenceLabel(car.confidence)}</span>
+                                            <span className="badge text-bg-light border">{getMarketMatchLabel(car.marketMatch)}</span>
                                             {car.recommendationSource === "ML" && (
                                                 <span className="badge text-bg-light border">ML scored</span>
                                             )}

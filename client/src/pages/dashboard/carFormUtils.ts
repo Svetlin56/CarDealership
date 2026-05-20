@@ -57,8 +57,8 @@ export function toCarPayload(form: CarFormValues, imageUrl: string | null) {
         vin: form.vin,
         price: Number(form.price),
         imageUrl,
-        transmission: form.transmission || null,
-        fuelType: form.fuelType || null,
+        transmission: form.transmission,
+        fuelType: form.fuelType,
         engineSize: form.engineSize ? Number(form.engineSize) : null,
         doors: form.doors ? Number(form.doors) : null,
         ownerCount: form.ownerCount ? Number(form.ownerCount) : null

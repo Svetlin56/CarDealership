@@ -89,7 +89,7 @@
     "anomaly_ratio",
     "anomaly_label",
     "car_type",
-    "confidence",
+    "market_match",
     "explanation",
     "recommendation_source"
   ]

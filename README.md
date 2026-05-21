@@ -245,10 +245,18 @@ The authentication cookie is configured as HttpOnly. Its Secure flag is configur
 
 The ML service:
 
-Uses a dataset of cars (cars.csv)  
-Trains a recommendation model (train.py)  
-Serves prediction and recommendation results via API (app.py)  
+Uses a car price dataset stored as cars.csv  
+Trains a recommendation model through train.py  
+Serves prediction and recommendation results through app.py  
 Is consumed by the Spring Boot backend through the configured ML service URL
+
+Dataset source:
+
+The dataset used for training and recommendation logic is based on the Car Price Prediction Dataset by Sukhmandeep Singh Brar, available on Kaggle:
+
+https://www.kaggle.com/datasets/sukhmandeepsinghbrar/car-price-prediction-dataset/data
+
+The dataset is used only for educational and demonstration purposes in the context of this project.
 
 The trained model artifact is not included in the repository because of its file size.  
 To run the ML service locally, the model should be generated first by executing train.py.

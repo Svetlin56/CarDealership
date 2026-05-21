@@ -33,12 +33,17 @@ spring:
   mail:
     host: smtp.mail.bg
     port: 465
-    username: ${MAIL_USER}
-    password: ${MAIL_PASS}
+    username: ${MAIL_USER:}
+    password: ${MAIL_PASS:}
+    protocol: smtp
     properties:
       mail.smtp.auth: true
       mail.smtp.ssl.enable: true
       mail.smtp.ssl.trust: smtp.mail.bg
+      mail.smtp.starttls.enable: false
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
 
   security:
     oauth2:
@@ -60,6 +65,8 @@ cors:
 
 app:
   frontend-url: http://localhost:5173
+  mail:
+    from: ${MAIL_FROM:}
   security:
     cookie-secure: ${APP_SECURITY_COOKIE_SECURE:false}
   storage:

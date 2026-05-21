@@ -38,7 +38,7 @@ public class AuthService {
         String token = jwtService.generateToken(user.getEmail(), user.getRole().name());
         authCookieService.writeAuthCookie(response, token);
 
-        return mapToAuthResponse(token, user, null);
+        return mapToAuthResponse(token, user);
     }
 
     public AuthResponse login(LoginRequest request, HttpServletResponse response) {
@@ -53,7 +53,7 @@ public class AuthService {
         String token = jwtService.generateToken(user.getEmail(), user.getRole().name());
         authCookieService.writeAuthCookie(response, token);
 
-        return mapToAuthResponse(token, user, null);
+        return mapToAuthResponse(token, user);
     }
 
     public void logout(HttpServletResponse response) {
@@ -64,12 +64,13 @@ public class AuthService {
         String email = resolveAuthenticatedEmail(authentication);
         User user = userService.findByEmail(email);
 
-        return mapToAuthResponse(null, user, null);
+        return mapToAuthResponse(null, user);
     }
 
     private void sendRegistrationEmail(User user) {
         try {
             emailService.sendRegistrationEmail(user.getEmail());
+            log.info("Registration email sent to {}", user.getEmail());
         } catch (Exception e) {
             log.warn("Could not send registration email to {}", user.getEmail(), e);
         }
@@ -103,12 +104,12 @@ public class AuthService {
         throw new BadCredentialsException("Authenticated user email could not be resolved.");
     }
 
-    private AuthResponse mapToAuthResponse(String token, User user, String picture) {
+    private AuthResponse mapToAuthResponse(String token, User user) {
         return new AuthResponse(
                 token,
                 user.getEmail(),
                 user.getRole().name(),
-                picture
+                null
         );
     }
 }

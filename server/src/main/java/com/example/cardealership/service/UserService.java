@@ -44,20 +44,30 @@ public class UserService {
     }
 
     public User findOrCreateGoogleUser(String email) {
+        return findOrCreateGoogleUserWithResult(email).user();
+    }
+
+    public GoogleUserResult findOrCreateGoogleUserWithResult(String email) {
         String normalizedEmail = normalizeEmail(email);
 
         return repo.findByEmail(normalizedEmail)
-                .orElseGet(() -> repo.save(
-                        User.builder()
-                                .email(normalizedEmail)
-                                .passwordHash(null)
-                                .role(Role.USER)
-                                .authProvider(AuthProvider.GOOGLE)
-                                .build()
-                ));
+                .map(existingUser -> new GoogleUserResult(existingUser, false))
+                .orElseGet(() -> {
+                    User createdUser = User.builder()
+                            .email(normalizedEmail)
+                            .passwordHash(null)
+                            .role(Role.USER)
+                            .authProvider(AuthProvider.GOOGLE)
+                            .build();
+
+                    return new GoogleUserResult(repo.save(createdUser), true);
+                });
     }
 
     private String normalizeEmail(String email) {
         return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    public record GoogleUserResult(User user, boolean created) {
     }
 }

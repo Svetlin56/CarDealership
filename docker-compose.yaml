@@ -49,15 +49,24 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/cardealership?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
-      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-$$2a$$10$$7EqJtq98hPqEX7fNZaFWoOhiFV.m7GuCk7vr2oKoK5go0PfmLUVjK}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH}
+
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       GOOGLE_JWT_SECRET: ${GOOGLE_JWT_SECRET:-change-this-local-development-secret-change-this}
+
       MAIL_HOST: ${MAIL_HOST:-smtp.mail.bg}
       MAIL_PORT: ${MAIL_PORT:-465}
       MAIL_USER: ${MAIL_USER:-}
       MAIL_PASS: ${MAIL_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-${MAIL_USER:-}}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-true}
+      MAIL_SMTP_SSL_ENABLE: ${MAIL_SMTP_SSL_ENABLE:-true}
+      MAIL_SMTP_STARTTLS_ENABLE: ${MAIL_SMTP_STARTTLS_ENABLE:-false}
+      MAIL_SMTP_SSL_TRUST: ${MAIL_SMTP_SSL_TRUST:-smtp.mail.bg}
+
       ML_SERVICE_URL: http://ml-service:5000
       FRONTEND_URL: http://localhost:5173
       APP_SECURITY_COOKIE_SECURE: "false"

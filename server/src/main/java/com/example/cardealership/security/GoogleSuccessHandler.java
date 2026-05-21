@@ -1,9 +1,12 @@
 package com.example.cardealership.security;
 
+import com.example.cardealership.service.EmailService;
 import com.example.cardealership.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
@@ -18,11 +21,14 @@ import java.nio.charset.StandardCharsets;
 @RequiredArgsConstructor
 public class GoogleSuccessHandler implements AuthenticationSuccessHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GoogleSuccessHandler.class);
+
     @Value("${app.frontend-url}")
     private String frontendUrl;
 
     private final JwtService jwtService;
     private final UserService userService;
+    private final EmailService emailService;
     private final AuthCookieService authCookieService;
 
     @Override
@@ -42,7 +48,13 @@ public class GoogleSuccessHandler implements AuthenticationSuccessHandler {
             return;
         }
 
-        var user = userService.findOrCreateGoogleUser(email);
+        var googleUserResult = userService.findOrCreateGoogleUserWithResult(email);
+        var user = googleUserResult.user();
+
+        if (googleUserResult.created()) {
+            sendRegistrationEmail(user.getEmail());
+        }
+
         String token = jwtService.generateToken(user.getEmail(), user.getRole().name());
         authCookieService.writeAuthCookie(response, token);
 
@@ -52,6 +64,15 @@ public class GoogleSuccessHandler implements AuthenticationSuccessHandler {
                 + "&picture=" + encode(picture == null ? "" : picture);
 
         response.sendRedirect(redirectUrl);
+    }
+
+    private void sendRegistrationEmail(String email) {
+        try {
+            emailService.sendRegistrationEmail(email);
+            log.info("Google registration email sent to {}", email);
+        } catch (Exception e) {
+            log.warn("Could not send Google registration email to {}", email, e);
+        }
     }
 
     private String encode(String value) {

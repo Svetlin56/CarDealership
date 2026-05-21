@@ -12,27 +12,55 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.username}")
+    @Value("${app.mail.from:}")
     private String fromEmail;
+
+    @Value("${spring.mail.username:}")
+    private String mailUsername;
+
+    @Value("${app.frontend-url:http://localhost:5173}")
+    private String frontendUrl;
 
     public void sendEmail(String to, String subject, String body) {
         SimpleMailMessage msg = new SimpleMailMessage();
-        msg.setFrom(fromEmail);
+
+        String sender = resolveSenderEmail();
+        if (!sender.isBlank()) {
+            msg.setFrom(sender);
+        }
+
         msg.setTo(to);
         msg.setSubject(subject);
         msg.setText(body);
+
         mailSender.send(msg);
     }
 
     public void sendRegistrationEmail(String to) {
         sendEmail(
                 to,
-                "Cars Buy!",
-                "Your email is set successfully. Your account has been created. Enjoy our website!!!"
+                "Welcome to Car Dealership",
+                """
+                Your account has been created successfully.
+                You can now browse available cars, view recommendations and send inquiries.
+                Thank you for joining Car Dealership!
+                """.formatted(frontendUrl)
         );
     }
 
     public void sendInquiry(String to, String subject, String body) {
         sendEmail(to, subject, body);
+    }
+
+    private String resolveSenderEmail() {
+        if (fromEmail != null && !fromEmail.isBlank()) {
+            return fromEmail.trim();
+        }
+
+        if (mailUsername != null && !mailUsername.isBlank()) {
+            return mailUsername.trim();
+        }
+
+        return "";
     }
 }

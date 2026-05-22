@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import http, { API_BASE_URL } from "../api/http";
 import { useAuth } from "../contexts/AuthContext";
 import { InquiryRequest, InquiryResponse, Listing } from "../types/models";
@@ -151,6 +151,7 @@ function validateInquiry(inquiry: InquiryRequest): Record<string, string> {
 
 export default function CarDetails() {
     const { id } = useParams();
+    const location = useLocation();
     const { isAdmin } = useAuth();
 
     const [listing, setListing] = useState<Listing | null>(null);
@@ -196,6 +197,27 @@ export default function CarDetails() {
 
         void loadListing();
     }, [id]);
+
+    useEffect(() => {
+        if (!listing || location.hash !== "#inquiry") {
+            return;
+        }
+
+        const timeoutId = window.setTimeout(() => {
+            const inquiryElement = document.getElementById("inquiry");
+
+            if (inquiryElement) {
+                inquiryElement.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+            }
+        }, 150);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+        };
+    }, [listing, location.hash]);
 
     const updateInquiry = (field: keyof InquiryRequest, value: string) => {
         setInquiry(prev => ({ ...prev, [field]: value }));
@@ -254,7 +276,9 @@ export default function CarDetails() {
     if (loading) {
         return (
             <div className="container mt-4">
-                <div className="alert alert-info" role="status">Loading listing details...</div>
+                <div className="alert alert-info" role="status">
+                    Loading listing details...
+                </div>
             </div>
         );
     }
@@ -382,7 +406,9 @@ export default function CarDetails() {
 
                             <form onSubmit={submitInquiry} noValidate>
                                 <div className="mb-3">
-                                    <label className="form-label" htmlFor="inquiry-name">Name</label>
+                                    <label className="form-label" htmlFor="inquiry-name">
+                                        Name
+                                    </label>
                                     <input
                                         id="inquiry-name"
                                         className={`form-control ${fieldErrors.name ? "is-invalid" : ""}`}
@@ -396,7 +422,9 @@ export default function CarDetails() {
                                 </div>
 
                                 <div className="mb-3">
-                                    <label className="form-label" htmlFor="inquiry-email">Email</label>
+                                    <label className="form-label" htmlFor="inquiry-email">
+                                        Email
+                                    </label>
                                     <input
                                         id="inquiry-email"
                                         type="email"
@@ -411,7 +439,9 @@ export default function CarDetails() {
                                 </div>
 
                                 <div className="mb-3">
-                                    <label className="form-label" htmlFor="inquiry-phone">Phone</label>
+                                    <label className="form-label" htmlFor="inquiry-phone">
+                                        Phone
+                                    </label>
 
                                     <div className="input-group">
                                         <select
@@ -447,7 +477,9 @@ export default function CarDetails() {
                                 </div>
 
                                 <div className="mb-3">
-                                    <label className="form-label" htmlFor="inquiry-message">Message</label>
+                                    <label className="form-label" htmlFor="inquiry-message">
+                                        Message
+                                    </label>
                                     <textarea
                                         id="inquiry-message"
                                         rows={4}

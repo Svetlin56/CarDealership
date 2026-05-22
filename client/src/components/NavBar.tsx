@@ -1,9 +1,51 @@
+import { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import http from "../api/http";
 import { useAuth } from "../contexts/AuthContext";
+import type { UnreadInquiryRepliesResponse } from "../types/models";
+
+const INQUIRY_MESSAGES_UPDATED_EVENT = "inquiry-messages-updated";
 
 export default function NavBar() {
     const navigate = useNavigate();
     const { user, isAuthenticated, isAdmin, logout } = useAuth();
+    const [unreadInquiryMessages, setUnreadInquiryMessages] = useState(0);
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            setUnreadInquiryMessages(0);
+            return;
+        }
+
+        let isMounted = true;
+
+        async function loadUnreadInquiryMessages() {
+            try {
+                const endpoint = isAdmin
+                    ? "/inquiries/unread-user-count"
+                    : "/inquiries/my/unread-count";
+
+                const response = await http.get<UnreadInquiryRepliesResponse>(endpoint);
+
+                if (isMounted) {
+                    setUnreadInquiryMessages(response.data.count);
+                }
+            } catch {
+                if (isMounted) {
+                    setUnreadInquiryMessages(0);
+                }
+            }
+        }
+
+        void loadUnreadInquiryMessages();
+
+        window.addEventListener(INQUIRY_MESSAGES_UPDATED_EVENT, loadUnreadInquiryMessages);
+
+        return () => {
+            isMounted = false;
+            window.removeEventListener(INQUIRY_MESSAGES_UPDATED_EVENT, loadUnreadInquiryMessages);
+        };
+    }, [isAuthenticated, isAdmin]);
 
     const handleLogout = async () => {
         await logout();
@@ -44,6 +86,20 @@ export default function NavBar() {
                             </li>
                         )}
 
+                        {isAuthenticated && !isAdmin && (
+                            <li className="nav-item">
+                                <NavLink to="/my-inquiries" className="nav-link d-flex align-items-center gap-2">
+                                    Inquiry
+
+                                    {unreadInquiryMessages > 0 && (
+                                        <span className="badge rounded-pill text-bg-danger">
+                                            {unreadInquiryMessages}
+                                        </span>
+                                    )}
+                                </NavLink>
+                            </li>
+                        )}
+
                         {isAuthenticated && isAdmin && (
                             <>
                                 <li className="nav-item">
@@ -53,8 +109,14 @@ export default function NavBar() {
                                 </li>
 
                                 <li className="nav-item">
-                                    <NavLink to="/inquiries" className="nav-link">
+                                    <NavLink to="/inquiries" className="nav-link d-flex align-items-center gap-2">
                                         Inquiry
+
+                                        {unreadInquiryMessages > 0 && (
+                                            <span className="badge rounded-pill text-bg-danger">
+                                                {unreadInquiryMessages}
+                                            </span>
+                                        )}
                                     </NavLink>
                                 </li>
                             </>

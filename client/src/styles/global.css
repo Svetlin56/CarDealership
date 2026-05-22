@@ -286,3 +286,151 @@ img { object-fit: cover; }
     max-width: 115px;
     flex: 0 0 115px;
 }
+
+#inquiry {
+    scroll-margin-top: 90px;
+}
+
+.inquiry-table-wrapper {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+}
+
+.inquiry-message-cell {
+    min-width: 260px;
+    max-width: 360px;
+    vertical-align: middle;
+}
+
+.inquiry-message-preview {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 0;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.inquiry-message-preview-text,
+.inquiry-user-message-preview {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.35;
+    max-height: 4.2em;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.inquiry-read-more {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #0d6efd;
+}
+
+.inquiry-message-preview:hover .inquiry-read-more {
+    text-decoration: underline;
+}
+
+.inquiry-full-message,
+.inquiry-admin-reply-box {
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 50vh;
+    overflow-y: auto;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 0.75rem;
+    background: #f8f9fa;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.inquiry-admin-reply-box {
+    border-color: #b6d4fe;
+    background: #f8fbff;
+}
+
+.inquiry-modal-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem 1rem;
+}
+
+.inquiry-reply-form textarea {
+    resize: vertical;
+    min-height: 140px;
+}
+
+.inquiry-conversation-box {
+    max-height: 48vh;
+    overflow-y: auto;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 0.75rem;
+    background: #f8f9fa;
+}
+
+.inquiry-chat-message {
+    display: flex;
+    margin-bottom: 0.75rem;
+}
+
+.inquiry-chat-message:last-child {
+    margin-bottom: 0;
+}
+
+.inquiry-chat-message-user {
+    justify-content: flex-start;
+}
+
+.inquiry-chat-message-admin {
+    justify-content: flex-end;
+}
+
+.inquiry-chat-bubble {
+    max-width: 78%;
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+    border: 1px solid #dee2e6;
+    background: #ffffff;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.45;
+}
+
+.inquiry-chat-message-admin .inquiry-chat-bubble {
+    border-color: #b6d4fe;
+    background: #eef5ff;
+}
+
+.inquiry-chat-sender {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.35rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #495057;
+}
+
+.inquiry-chat-date {
+    font-weight: 400;
+    color: #6c757d;
+}
+
+@media (max-width: 768px) {
+    .inquiry-modal-meta {
+        grid-template-columns: 1fr;
+    }
+
+    .inquiry-chat-bubble {
+        max-width: 100%;
+    }
+}

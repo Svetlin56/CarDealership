@@ -1,5 +1,6 @@
 package com.example.cardealership.dto;
 
+import com.example.cardealership.domain.InquiryMessageSender;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
@@ -36,6 +37,24 @@ public class InquiryDtos {
     }
 
     @Getter
+    @Setter
+    public static class InquiryMessageRequest {
+
+        @NotBlank(message = "Message is required")
+        @Size(max = 2000, message = "Message must be up to 2000 characters")
+        private String message;
+    }
+
+    @Getter
+    @Setter
+    public static class AdminReplyRequest {
+
+        @NotBlank(message = "Reply message is required")
+        @Size(max = 2000, message = "Reply message must be up to 2000 characters")
+        private String message;
+    }
+
+    @Getter
     @AllArgsConstructor
     public static class InquiryResponse {
 
@@ -59,5 +78,46 @@ public class InquiryDtos {
         private String phone;
         private String message;
         private Instant createdAt;
+        private String adminReplyMessage;
+        private Instant adminRepliedAt;
+        private boolean adminReplyReadByUser;
+        private long unreadUserMessagesCount;
+        private Instant latestMessageAt;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class UserInquiryResponse {
+
+        private Long id;
+        private Long listingId;
+        private String carTitle;
+        private String message;
+        private Instant createdAt;
+        private String adminReplyMessage;
+        private Instant adminRepliedAt;
+        private boolean adminReplyReadByUser;
+        private long unreadAdminMessagesCount;
+        private Instant latestMessageAt;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class InquiryMessageResponse {
+
+        private Long id;
+        private Long inquiryId;
+        private InquiryMessageSender senderType;
+        private String message;
+        private Instant createdAt;
+        private boolean readByUser;
+        private boolean readByAdmin;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class UnreadInquiryRepliesResponse {
+
+        private long count;
     }
 }

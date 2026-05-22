@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import OAuthSuccess from "./pages/OAuthSuccess";
 import Recommendations from "./pages/Recommendations";
 import Inquiries from "./pages/Inquiries";
+import MyInquiries from "./pages/MyInquiries";
 
 export default function App() {
     return (
@@ -30,6 +31,7 @@ export default function App() {
                     <Route path="/cars" element={<Cars />} />
                     <Route path="/cars/:id" element={<CarDetails />} />
                     <Route path="/recommendations" element={<Recommendations />} />
+                    <Route path="/my-inquiries" element={<MyInquiries />} />
                 </Route>
 
                 <Route element={<AdminRoute />}>

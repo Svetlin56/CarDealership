@@ -3,10 +3,13 @@ package com.example.cardealership.service;
 import com.example.cardealership.domain.AuthProvider;
 import com.example.cardealership.domain.Car;
 import com.example.cardealership.domain.Inquiry;
+import com.example.cardealership.domain.InquiryMessage;
+import com.example.cardealership.domain.InquiryMessageSender;
 import com.example.cardealership.domain.Listing;
 import com.example.cardealership.domain.Role;
 import com.example.cardealership.domain.User;
 import com.example.cardealership.dto.InquiryDtos;
+import com.example.cardealership.repository.InquiryMessageRepository;
 import com.example.cardealership.repository.InquiryRepository;
 import com.example.cardealership.repository.ListingRepository;
 import com.example.cardealership.web.error.BusinessValidationException;
@@ -14,6 +17,7 @@ import com.example.cardealership.web.error.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -36,6 +40,9 @@ class InquiryServiceTest {
 
     @Mock
     private InquiryRepository inquiryRepo;
+
+    @Mock
+    private InquiryMessageRepository messageRepo;
 
     @Mock
     private ListingRepository listingRepo;
@@ -86,7 +93,7 @@ class InquiryServiceTest {
     }
 
     @Test
-    void createShouldSaveInquiryAndSendNotificationEmail() {
+    void createShouldSaveInquiryMessageAndSendNotificationEmail() {
         when(listingRepo.findByIdAndStatus(100L, Listing.Status.ACTIVE))
                 .thenReturn(Optional.of(listing));
 
@@ -97,6 +104,9 @@ class InquiryServiceTest {
                     return inquiry;
                 });
 
+        when(messageRepo.save(any(InquiryMessage.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
         InquiryDtos.InquiryResponse response = inquiryService.create(100L, request);
 
         assertThat(response.getId()).isEqualTo(200L);
@@ -105,6 +115,18 @@ class InquiryServiceTest {
         assertThat(response.getEmail()).isEqualTo("john@example.com");
         assertThat(response.getPhone()).isEqualTo("+359888123456");
         assertThat(response.getMessage()).isEqualTo("I am interested in this car.");
+
+        ArgumentCaptor<InquiryMessage> messageCaptor = ArgumentCaptor.forClass(InquiryMessage.class);
+
+        verify(messageRepo).save(messageCaptor.capture());
+
+        InquiryMessage savedMessage = messageCaptor.getValue();
+
+        assertThat(savedMessage.getInquiry().getId()).isEqualTo(200L);
+        assertThat(savedMessage.getSenderType()).isEqualTo(InquiryMessageSender.USER);
+        assertThat(savedMessage.getMessage()).isEqualTo("I am interested in this car.");
+        assertThat(savedMessage.isReadByUser()).isTrue();
+        assertThat(savedMessage.isReadByAdmin()).isFalse();
 
         verify(emailService).sendInquiry(
                 eq("seller@test.com"),
@@ -125,6 +147,9 @@ class InquiryServiceTest {
                     return inquiry;
                 });
 
+        when(messageRepo.save(any(InquiryMessage.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
         doThrow(new RuntimeException("Mail server is unavailable"))
                 .when(emailService)
                 .sendInquiry(
@@ -140,6 +165,8 @@ class InquiryServiceTest {
         assertThat(response.getEmail()).isEqualTo("john@example.com");
 
         verify(inquiryRepo).save(any(Inquiry.class));
+        verify(messageRepo).save(any(InquiryMessage.class));
+
         verify(emailService).sendInquiry(
                 eq("seller@test.com"),
                 eq("New inquiry for your listing"),
@@ -157,6 +184,7 @@ class InquiryServiceTest {
                 .hasMessage("Listing with id '404' was not found.");
 
         verify(inquiryRepo, never()).save(any(Inquiry.class));
+        verify(messageRepo, never()).save(any(InquiryMessage.class));
         verify(emailService, never()).sendInquiry(anyString(), anyString(), anyString());
     }
 
@@ -172,6 +200,7 @@ class InquiryServiceTest {
                 .hasMessage("Cannot send inquiry for a deleted car.");
 
         verify(inquiryRepo, never()).save(any(Inquiry.class));
+        verify(messageRepo, never()).save(any(InquiryMessage.class));
         verify(emailService, never()).sendInquiry(anyString(), anyString(), anyString());
     }
 }

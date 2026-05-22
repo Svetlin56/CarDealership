@@ -327,6 +327,7 @@ export default function Inquiries() {
                                 </td>
                                 <td>{formatDate(inquiry.createdAt)}</td>
                                 <td>
+                                    {/* From Uiverse.io by vinodjangid07 */}
                                     <button
                                         type="button"
                                         className="delete-button-inq"

@@ -447,7 +447,7 @@ img { object-fit: cover; }
     min-height: 420px;
     background-image:
             linear-gradient(rgba(10, 18, 30, 0.45), rgba(10, 18, 30, 0.45)),
-            url("/images/home-cars.jpg");
+            url("../../public/images/home-cars.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;

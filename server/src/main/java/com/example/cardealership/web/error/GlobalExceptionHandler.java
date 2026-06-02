@@ -72,7 +72,12 @@ public class GlobalExceptionHandler {
             EmailAlreadyExistsException ex,
             HttpServletRequest request
     ) {
-        return apiErrorFactory.build(HttpStatus.CONFLICT, ex.getMessage(), request, null);
+        return apiErrorFactory.build(
+                HttpStatus.CONFLICT,
+                "Validation failed",
+                request,
+                Map.of("email", "This email is already registered.")
+        );
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)

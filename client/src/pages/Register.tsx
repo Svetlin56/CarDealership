@@ -40,13 +40,20 @@ export default function Register() {
                 navigate("/cars", { replace: true });
             }
         } catch (err: any) {
-            if (err.response?.status === 400) {
+            const status = err.response?.status;
+
+            if (status === 400 || status === 409) {
                 const apiErrors =
                     err.response?.data?.fieldErrors ||
                     err.response?.data?.errors;
 
                 if (apiErrors) {
                     setErrors(apiErrors);
+                    return;
+                }
+
+                if (err.response?.data?.message) {
+                    setErrors({ email: err.response.data.message });
                 }
             }
         }
@@ -79,6 +86,7 @@ export default function Register() {
                 required
                 error={errors.password}
             />
+
             {/* From Uiverse.io by cssbuttons-io */}
             <div className="btn-wrapper">
                 <button className="btn-success">

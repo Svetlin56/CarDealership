@@ -13,6 +13,16 @@ public interface InquiryMessageRepository extends JpaRepository<InquiryMessage, 
 
     Optional<InquiryMessage> findTopByInquiryIdOrderByCreatedAtDesc(Long inquiryId);
 
+    Optional<InquiryMessage> findFirstByInquiryIdAndSenderTypeOrderByCreatedAtAsc(
+            Long inquiryId,
+            InquiryMessageSender senderType
+    );
+
+    Optional<InquiryMessage> findTopByInquiryIdAndSenderTypeOrderByCreatedAtDesc(
+            Long inquiryId,
+            InquiryMessageSender senderType
+    );
+
     List<InquiryMessage> findByInquiryIdAndSenderTypeAndReadByUserFalse(
             Long inquiryId,
             InquiryMessageSender senderType

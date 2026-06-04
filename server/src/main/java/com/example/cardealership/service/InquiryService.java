@@ -144,6 +144,41 @@ public class InquiryService {
     }
 
     @Transactional
+    public InquiryDtos.InquiryMessageResponse updateMessage(
+            Long inquiryId,
+            Long messageId,
+            InquiryDtos.InquiryMessageRequest req,
+            Authentication authentication
+    ) {
+        Inquiry inquiry = findInquiryOrThrow(inquiryId);
+        validateAccessToInquiry(inquiry, authentication);
+
+        InquiryMessage message = findMessageOrThrow(messageId);
+        validateMessageBelongsToInquiry(message, inquiryId);
+        validateCanModifyMessage(message, authentication);
+
+        message.setMessage(normalizeRequired(req.getMessage()));
+
+        InquiryMessage savedMessage = messageRepo.save(message);
+        refreshInquiryConversationSummary(inquiry);
+
+        return toMessageResponse(savedMessage);
+    }
+
+    @Transactional
+    public void deleteMessage(Long inquiryId, Long messageId, Authentication authentication) {
+        Inquiry inquiry = findInquiryOrThrow(inquiryId);
+        validateAccessToInquiry(inquiry, authentication);
+
+        InquiryMessage message = findMessageOrThrow(messageId);
+        validateMessageBelongsToInquiry(message, inquiryId);
+        validateCanModifyMessage(message, authentication);
+
+        messageRepo.delete(message);
+        refreshInquiryConversationSummary(inquiry);
+    }
+
+    @Transactional
     public InquiryDtos.AdminInquiryResponse replyForAdmin(Long id, InquiryDtos.AdminReplyRequest req) {
         Inquiry inquiry = findInquiryOrThrow(id);
 
@@ -260,6 +295,57 @@ public class InquiryService {
     private Inquiry findInquiryOrThrow(Long id) {
         return inquiryRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Inquiry", "id", id));
+    }
+
+    private InquiryMessage findMessageOrThrow(Long id) {
+        return messageRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Inquiry message", "id", id));
+    }
+
+    private void validateMessageBelongsToInquiry(InquiryMessage message, Long inquiryId) {
+        if (!message.getInquiry().getId().equals(inquiryId)) {
+            throw new ResourceNotFoundException("Inquiry message", "id", message.getId());
+        }
+    }
+
+    private void validateCanModifyMessage(InquiryMessage message, Authentication authentication) {
+        InquiryMessageSender expectedSender = isAdmin(authentication)
+                ? InquiryMessageSender.ADMIN
+                : InquiryMessageSender.USER;
+
+        if (message.getSenderType() != expectedSender) {
+            throw new AccessDeniedException("You can modify only your own messages.");
+        }
+    }
+
+    private void refreshInquiryConversationSummary(Inquiry inquiry) {
+        messageRepo.findFirstByInquiryIdAndSenderTypeOrderByCreatedAtAsc(
+                        inquiry.getId(),
+                        InquiryMessageSender.USER
+                )
+                .ifPresentOrElse(
+                        firstUserMessage -> inquiry.setMessage(firstUserMessage.getMessage()),
+                        () -> inquiry.setMessage(null)
+                );
+
+        messageRepo.findTopByInquiryIdAndSenderTypeOrderByCreatedAtDesc(
+                        inquiry.getId(),
+                        InquiryMessageSender.ADMIN
+                )
+                .ifPresentOrElse(
+                        latestAdminMessage -> {
+                            inquiry.setAdminReplyMessage(latestAdminMessage.getMessage());
+                            inquiry.setAdminRepliedAt(latestAdminMessage.getCreatedAt());
+                            inquiry.setAdminReplyReadByUser(latestAdminMessage.isReadByUser());
+                        },
+                        () -> {
+                            inquiry.setAdminReplyMessage(null);
+                            inquiry.setAdminRepliedAt(null);
+                            inquiry.setAdminReplyReadByUser(false);
+                        }
+                );
+
+        inquiryRepo.save(inquiry);
     }
 
     private void validateAccessToInquiry(Inquiry inquiry, Authentication authentication) {

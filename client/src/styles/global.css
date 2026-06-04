@@ -425,6 +425,27 @@ img { object-fit: cover; }
     color: #6c757d;
 }
 
+
+.inquiry-chat-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.6rem;
+}
+
+.inquiry-chat-message-admin .inquiry-chat-actions {
+    justify-content: flex-end;
+}
+
+.inquiry-chat-message-user .inquiry-chat-actions {
+    justify-content: flex-start;
+}
+
+.inquiry-message-edit-textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
 @media (max-width: 768px) {
     .inquiry-modal-meta {
         grid-template-columns: 1fr;

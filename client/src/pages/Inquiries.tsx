@@ -45,6 +45,10 @@ export default function Inquiries() {
     const [replySaving, setReplySaving] = useState(false);
     const [replyError, setReplyError] = useState("");
     const [replySuccess, setReplySuccess] = useState("");
+    const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
+    const [editingMessageText, setEditingMessageText] = useState("");
+    const [messageActionError, setMessageActionError] = useState("");
+    const [messageActionLoadingId, setMessageActionLoadingId] = useState<number | null>(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -103,13 +107,19 @@ export default function Inquiries() {
         setReplyMessage("");
         setReplyError("");
         setReplySuccess("");
+        clearMessageEditing();
         setMessagesLoading(true);
 
         try {
             const response = await http.get<InquiryMessage[]>(`/inquiries/${inquiry.id}/messages`);
-            setMessages(response.data);
 
             await http.patch(`/inquiries/${inquiry.id}/messages/read`);
+
+            setMessages(response.data.map(message =>
+                message.senderType === "USER"
+                    ? { ...message, readByAdmin: true }
+                    : message
+            ));
 
             setInquiries(currentInquiries =>
                 currentInquiries.map(current =>
@@ -133,6 +143,43 @@ export default function Inquiries() {
         setReplyMessage("");
         setReplyError("");
         setReplySuccess("");
+        clearMessageEditing();
+    }
+
+    function clearMessageEditing() {
+        setEditingMessageId(null);
+        setEditingMessageText("");
+        setMessageActionError("");
+        setMessageActionLoadingId(null);
+    }
+
+    function syncAdminInquirySummary(inquiryId: number, updatedMessages: InquiryMessage[]) {
+        const latestMessage = updatedMessages.length > 0
+            ? updatedMessages[updatedMessages.length - 1]
+            : undefined;
+        const firstUserMessage = updatedMessages.find(message => message.senderType === "USER");
+        const latestAdminMessage = [...updatedMessages]
+            .reverse()
+            .find(message => message.senderType === "ADMIN");
+
+        const applySummary = (inquiry: AdminInquiry): AdminInquiry => ({
+            ...inquiry,
+            message: firstUserMessage?.message ?? "",
+            adminReplyMessage: latestAdminMessage?.message ?? null,
+            adminRepliedAt: latestAdminMessage?.createdAt ?? null,
+            adminReplyReadByUser: latestAdminMessage?.readByUser ?? false,
+            latestMessageAt: latestMessage?.createdAt ?? null
+        });
+
+        setInquiries(currentInquiries =>
+            currentInquiries.map(inquiry =>
+                inquiry.id === inquiryId ? applySummary(inquiry) : inquiry
+            )
+        );
+
+        setSelectedInquiry(current =>
+            current && current.id === inquiryId ? applySummary(current) : current
+        );
     }
 
     async function handleSendReply() {
@@ -163,39 +210,99 @@ export default function Inquiries() {
             );
 
             const newMessage = response.data;
-            setMessages(currentMessages => [...currentMessages, newMessage]);
+            const updatedMessages = [...messages, newMessage];
+
+            setMessages(updatedMessages);
+            syncAdminInquirySummary(selectedInquiry.id, updatedMessages);
             setReplyMessage("");
             setReplySuccess("Reply was sent to the user.");
-
-            setInquiries(currentInquiries =>
-                currentInquiries.map(inquiry =>
-                    inquiry.id === selectedInquiry.id
-                        ? {
-                            ...inquiry,
-                            adminReplyMessage: newMessage.message,
-                            adminRepliedAt: newMessage.createdAt,
-                            adminReplyReadByUser: false,
-                            latestMessageAt: newMessage.createdAt
-                        }
-                        : inquiry
-                )
-            );
-
-            setSelectedInquiry(current =>
-                current
-                    ? {
-                        ...current,
-                        adminReplyMessage: newMessage.message,
-                        adminRepliedAt: newMessage.createdAt,
-                        adminReplyReadByUser: false,
-                        latestMessageAt: newMessage.createdAt
-                    }
-                    : current
-            );
         } catch {
             setReplyError("Could not send reply.");
         } finally {
             setReplySaving(false);
+        }
+    }
+
+    function startEditingMessage(message: InquiryMessage) {
+        setEditingMessageId(message.id);
+        setEditingMessageText(message.message);
+        setMessageActionError("");
+        setReplySuccess("");
+    }
+
+    async function handleSaveEditedMessage(messageId: number) {
+        if (!selectedInquiry) {
+            return;
+        }
+
+        const trimmedMessage = editingMessageText.trim();
+
+        if (!trimmedMessage) {
+            setMessageActionError("Message is required.");
+            return;
+        }
+
+        if (trimmedMessage.length > 2000) {
+            setMessageActionError("Message must be up to 2000 characters.");
+            return;
+        }
+
+        setMessageActionLoadingId(messageId);
+        setMessageActionError("");
+
+        try {
+            const response = await http.put<InquiryMessage>(
+                `/inquiries/${selectedInquiry.id}/messages/${messageId}`,
+                { message: trimmedMessage }
+            );
+
+            const updatedMessages = messages.map(message =>
+                message.id === messageId ? response.data : message
+            );
+
+            setMessages(updatedMessages);
+            syncAdminInquirySummary(selectedInquiry.id, updatedMessages);
+            setEditingMessageId(null);
+            setEditingMessageText("");
+            setReplySuccess("Message was updated.");
+        } catch {
+            setMessageActionError("Could not update message.");
+        } finally {
+            setMessageActionLoadingId(null);
+        }
+    }
+
+    async function handleDeleteMessage(messageId: number) {
+        if (!selectedInquiry) {
+            return;
+        }
+
+        if (!window.confirm("Delete this message?")) {
+            return;
+        }
+
+        setMessageActionLoadingId(messageId);
+        setMessageActionError("");
+        setReplySuccess("");
+
+        try {
+            await http.delete(`/inquiries/${selectedInquiry.id}/messages/${messageId}`);
+
+            const updatedMessages = messages.filter(message => message.id !== messageId);
+
+            setMessages(updatedMessages);
+            syncAdminInquirySummary(selectedInquiry.id, updatedMessages);
+
+            if (editingMessageId === messageId) {
+                setEditingMessageId(null);
+                setEditingMessageText("");
+            }
+
+            setReplySuccess("Message was deleted.");
+        } catch {
+            setMessageActionError("Could not delete message.");
+        } finally {
+            setMessageActionLoadingId(null);
         }
     }
 
@@ -447,35 +554,106 @@ export default function Inquiries() {
                                         )}
 
                                         {!messagesLoading && messages.length === 0 && (
-                                            <div className="inquiry-chat-message inquiry-chat-message-user">
-                                                <div className="inquiry-chat-bubble">
-                                                    <div className="inquiry-chat-sender">User</div>
-                                                    <div>{selectedInquiry.message || "No message"}</div>
-                                                </div>
-                                            </div>
+                                            <div className="text-muted">No messages in this conversation.</div>
                                         )}
 
-                                        {!messagesLoading && messages.map(message => (
-                                            <div
-                                                key={message.id}
-                                                className={`inquiry-chat-message ${
-                                                    message.senderType === "ADMIN"
-                                                        ? "inquiry-chat-message-admin"
-                                                        : "inquiry-chat-message-user"
-                                                }`}
-                                            >
-                                                <div className="inquiry-chat-bubble">
-                                                    <div className="inquiry-chat-sender">
-                                                        {message.senderType === "ADMIN" ? "Admin" : "User"}
-                                                        <span className="inquiry-chat-date">
-                                                            {formatDate(message.createdAt)}
-                                                        </span>
+                                        {!messagesLoading && messages.map(message => {
+                                            const canManageMessage = message.senderType === "ADMIN";
+                                            const isEditing = editingMessageId === message.id;
+                                            const isMessageLoading = messageActionLoadingId === message.id;
+
+                                            return (
+                                                <div
+                                                    key={message.id}
+                                                    className={`inquiry-chat-message ${
+                                                        message.senderType === "ADMIN"
+                                                            ? "inquiry-chat-message-admin"
+                                                            : "inquiry-chat-message-user"
+                                                    }`}
+                                                >
+                                                    <div className="inquiry-chat-bubble">
+                                                        <div className="inquiry-chat-sender">
+                                                            {message.senderType === "ADMIN" ? "Admin" : "User"}
+                                                            <span className="inquiry-chat-date">
+                                                                {formatDate(message.createdAt)}
+                                                            </span>
+                                                        </div>
+
+                                                        {isEditing ? (
+                                                            <div>
+                                                                <textarea
+                                                                    className="form-control form-control-sm inquiry-message-edit-textarea"
+                                                                    value={editingMessageText}
+                                                                    maxLength={2000}
+                                                                    disabled={isMessageLoading}
+                                                                    onChange={event => {
+                                                                        setEditingMessageText(event.target.value);
+                                                                        setMessageActionError("");
+                                                                    }}
+                                                                />
+
+                                                                <div className="inquiry-chat-actions">
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn btn-sm btn-primary"
+                                                                        disabled={isMessageLoading}
+                                                                        onClick={() => handleSaveEditedMessage(message.id)}
+                                                                    >
+                                                                        {isMessageLoading ? "Saving..." : "Save"}
+                                                                    </button>
+
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn btn-sm btn-outline-secondary"
+                                                                        disabled={isMessageLoading}
+                                                                        onClick={() => {
+                                                                            setEditingMessageId(null);
+                                                                            setEditingMessageText("");
+                                                                            setMessageActionError("");
+                                                                        }}
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                <div>{message.message}</div>
+
+                                                                {canManageMessage && (
+                                                                    <div className="inquiry-chat-actions">
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn btn-sm btn-outline-primary"
+                                                                            disabled={isMessageLoading}
+                                                                            onClick={() => startEditingMessage(message)}
+                                                                        >
+                                                                            Edit
+                                                                        </button>
+
+                                                                        <button
+                                                                            type="button"
+                                                                            className="btn btn-sm btn-outline-danger"
+                                                                            disabled={isMessageLoading}
+                                                                            onClick={() => handleDeleteMessage(message.id)}
+                                                                        >
+                                                                            {isMessageLoading ? "Deleting..." : "Delete"}
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        )}
                                                     </div>
-                                                    <div>{message.message}</div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
+
+                                    {messageActionError && (
+                                        <div className="alert alert-danger mt-3 mb-0">
+                                            {messageActionError}
+                                        </div>
+                                    )}
 
                                     {replySuccess && (
                                         <div className="alert alert-success mt-3 mb-0">

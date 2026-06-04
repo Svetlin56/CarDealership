@@ -67,6 +67,26 @@ public class InquiryController {
         return inquiryService.sendMessage(id, req, authentication);
     }
 
+    @PutMapping("/{id}/messages/{messageId}")
+    public InquiryDtos.InquiryMessageResponse updateMessage(
+            @PathVariable Long id,
+            @PathVariable Long messageId,
+            @Valid @RequestBody InquiryDtos.InquiryMessageRequest req,
+            Authentication authentication) {
+
+        return inquiryService.updateMessage(id, messageId, req, authentication);
+    }
+
+    @DeleteMapping("/{id}/messages/{messageId}")
+    public ResponseEntity<Void> deleteMessage(
+            @PathVariable Long id,
+            @PathVariable Long messageId,
+            Authentication authentication) {
+
+        inquiryService.deleteMessage(id, messageId, authentication);
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/{id}/messages/read")
     public ResponseEntity<Void> markMessagesAsRead(
             @PathVariable Long id,

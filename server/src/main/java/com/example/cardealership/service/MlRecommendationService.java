@@ -32,6 +32,7 @@ public class MlRecommendationService {
 
     private static final String SOURCE_ML = "ML";
     private static final String SOURCE_FALLBACK = "FALLBACK";
+    private static final double ABOVE_MARKET_RATIO_THRESHOLD = 0.25;
 
     private final RestTemplate restTemplate;
 
@@ -110,6 +111,41 @@ public class MlRecommendationService {
         } catch (RestClientException ex) {
             throw new MlPredictionException("ML price prediction failed.", ex);
         }
+    }
+
+    public boolean isAboveMarket(Car car) {
+        return isAboveMarket(car, predict(car));
+    }
+
+    public boolean isAboveMarket(Car car, Double predictedPrice) {
+        if (car == null || car.getPrice() == null || predictedPrice == null || predictedPrice <= 0) {
+            return false;
+        }
+
+        double ratio = (car.getPrice().doubleValue() - predictedPrice) / predictedPrice;
+
+        return ratio > ABOVE_MARKET_RATIO_THRESHOLD;
+    }
+
+    public boolean isAboveMarketRecommendation(MlRecommendationResponse recommendation) {
+        if (recommendation == null) {
+            return false;
+        }
+
+        if ("OVERPRICED".equalsIgnoreCase(recommendation.getAnomalyLabel())) {
+            return true;
+        }
+
+        if (recommendation.getPrice() == null
+                || recommendation.getPredictedPrice() == null
+                || recommendation.getPredictedPrice() <= 0) {
+            return false;
+        }
+
+        double ratio = (recommendation.getPrice().doubleValue() - recommendation.getPredictedPrice())
+                / recommendation.getPredictedPrice();
+
+        return ratio > ABOVE_MARKET_RATIO_THRESHOLD;
     }
 
     private Comparator<MlRecommendationResponse> byValueScoreDescending() {

@@ -11,6 +11,8 @@ import com.example.cardealership.web.error.MlServiceException;
 import com.example.cardealership.web.error.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,14 +31,22 @@ public class MlController {
     private final ListingRepository listingRepository;
 
     @GetMapping("/recommendations")
-    public List<MlRecommendationResponse> getRecommendations() {
+    public List<MlRecommendationResponse> getRecommendations(Authentication authentication) {
         List<Listing> activeListings = listingRepository.findAllByStatus(Listing.Status.ACTIVE)
                 .stream()
                 .filter(listing -> listing.getCar() != null && !listing.getCar().isDeleted())
                 .toList();
 
         try {
-            return mlRecommendationService.recommend(activeListings);
+            List<MlRecommendationResponse> recommendations = mlRecommendationService.recommend(activeListings);
+
+            if (isAdmin(authentication)) {
+                return recommendations;
+            }
+
+            return recommendations.stream()
+                    .filter(recommendation -> !mlRecommendationService.isAboveMarketRecommendation(recommendation))
+                    .toList();
         } catch (MlServiceException ex) {
             log.warn("ML recommendations unavailable. Returning fallback recommendations: {}", ex.getMessage());
             return mlRecommendationService.fallbackRecommendations(activeListings);
@@ -53,5 +63,17 @@ public class MlController {
         return MlPredictionResponse.builder()
                 .predictedPrice(predictedPrice)
                 .build();
+    }
+
+
+    private boolean isAdmin(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        return authentication.getAuthorities()
+                .stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch("ROLE_ADMIN"::equals);
     }
 }

@@ -9,9 +9,12 @@ import com.example.cardealership.repository.ListingRepository;
 import com.example.cardealership.repository.UserRepository;
 import com.example.cardealership.web.error.BusinessValidationException;
 import com.example.cardealership.web.error.InvalidListingStatusException;
+import com.example.cardealership.web.error.MlServiceException;
 import com.example.cardealership.web.error.ResourceNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,6 +27,7 @@ public class ListingService {
     private final ListingRepository listingRepo;
     private final CarRepository carRepo;
     private final UserRepository userRepo;
+    private final MlRecommendationService mlRecommendationService;
 
     @Transactional
     public ListingDtos.ListingResponse createByEmail(String email, ListingDtos.CreateListingRequest req) {
@@ -50,12 +54,44 @@ public class ListingService {
     public List<ListingDtos.ListingResponse> all() {
         return ListingDtos.ListingResponse.fromList(
                 listingRepo.findAllByStatus(Listing.Status.ACTIVE)
+                        .stream()
+                        .filter(listing -> listing.getCar() != null && !listing.getCar().isDeleted())
+                        .toList()
         );
+    }
+
+    public List<ListingDtos.ListingResponse> all(Authentication authentication) {
+        List<Listing> activeListings = listingRepo.findAllByStatus(Listing.Status.ACTIVE)
+                .stream()
+                .filter(listing -> listing.getCar() != null && !listing.getCar().isDeleted())
+                .filter(listing -> isAdmin(authentication) || isVisibleForUser(listing.getCar()))
+                .toList();
+
+        return ListingDtos.ListingResponse.fromList(activeListings);
     }
 
     public ListingDtos.ListingResponse get(Long id) {
         Listing listing = listingRepo.findByIdAndStatus(id, Listing.Status.ACTIVE)
                 .orElseThrow(() -> new ResourceNotFoundException("Listing", "id", id));
+
+        if (listing.getCar().isDeleted()) {
+            throw new ResourceNotFoundException("Listing", "id", id);
+        }
+
+        return ListingDtos.ListingResponse.from(listing);
+    }
+
+    public ListingDtos.ListingResponse get(Long id, Authentication authentication) {
+        Listing listing = listingRepo.findByIdAndStatus(id, Listing.Status.ACTIVE)
+                .orElseThrow(() -> new ResourceNotFoundException("Listing", "id", id));
+
+        if (listing.getCar().isDeleted()) {
+            throw new ResourceNotFoundException("Listing", "id", id);
+        }
+
+        if (!isAdmin(authentication) && !isVisibleForUser(listing.getCar())) {
+            throw new ResourceNotFoundException("Listing", "id", id);
+        }
 
         return ListingDtos.ListingResponse.from(listing);
     }
@@ -65,6 +101,21 @@ public class ListingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Listing", "carId", carId));
 
         if (listing.getCar().isDeleted()) {
+            throw new ResourceNotFoundException("Listing", "carId", carId);
+        }
+
+        return ListingDtos.ListingResponse.from(listing);
+    }
+
+    public ListingDtos.ListingResponse getActiveByCarId(Long carId, Authentication authentication) {
+        Listing listing = listingRepo.findFirstByCar_IdAndStatus(carId, Listing.Status.ACTIVE)
+                .orElseThrow(() -> new ResourceNotFoundException("Listing", "carId", carId));
+
+        if (listing.getCar().isDeleted()) {
+            throw new ResourceNotFoundException("Listing", "carId", carId);
+        }
+
+        if (!isAdmin(authentication) && !isVisibleForUser(listing.getCar())) {
             throw new ResourceNotFoundException("Listing", "carId", carId);
         }
 
@@ -89,6 +140,25 @@ public class ListingService {
         listing.setStatus(newStatus);
 
         return ListingDtos.ListingResponse.from(listingRepo.save(listing));
+    }
+
+    private boolean isVisibleForUser(Car car) {
+        try {
+            return !mlRecommendationService.isAboveMarket(car);
+        } catch (MlServiceException ex) {
+            return true;
+        }
+    }
+
+    private boolean isAdmin(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        return authentication.getAuthorities()
+                .stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch("ROLE_ADMIN"::equals);
     }
 
     private void validateNoOtherActiveListingForCar(Listing listing) {

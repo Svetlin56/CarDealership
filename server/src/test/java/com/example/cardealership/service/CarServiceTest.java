@@ -48,6 +48,9 @@ class CarServiceTest {
     @Mock
     private FileStorageService fileStorageService;
 
+    @Mock
+    private MlRecommendationService mlRecommendationService;
+
     private CarService carService;
 
     private Car car;
@@ -67,7 +70,8 @@ class CarServiceTest {
                 fileStorageService,
                 carValidator,
                 carMapper,
-                carSpecificationBuilder
+                carSpecificationBuilder,
+                mlRecommendationService
         );
 
         car = Car.builder()

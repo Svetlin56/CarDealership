@@ -110,7 +110,7 @@ class CarControllerTest {
                 .sortDir("desc")
                 .build();
 
-        when(carService.findAll(any(CarDtos.CarSearchRequest.class))).thenReturn(response);
+        when(carService.findAll(any(CarDtos.CarSearchRequest.class), any())).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/cars")
                         .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("user@test.com").roles("USER")))

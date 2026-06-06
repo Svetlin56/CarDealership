@@ -19,18 +19,24 @@ public class ListingController {
     private final ListingService service;
 
     @GetMapping
-    public List<ListingDtos.ListingResponse> all() {
-        return service.all();
+    public List<ListingDtos.ListingResponse> all(Authentication authentication) {
+        return service.all(authentication);
     }
 
     @GetMapping("/by-car/{carId}")
-    public ListingDtos.ListingResponse getByCarId(@PathVariable("carId") Long carId) {
-        return service.getActiveByCarId(carId);
+    public ListingDtos.ListingResponse getByCarId(
+            @PathVariable("carId") Long carId,
+            Authentication authentication
+    ) {
+        return service.getActiveByCarId(carId, authentication);
     }
 
     @GetMapping("/{id}")
-    public ListingDtos.ListingResponse get(@PathVariable("id") Long id) {
-        return service.get(id);
+    public ListingDtos.ListingResponse get(
+            @PathVariable("id") Long id,
+            Authentication authentication
+    ) {
+        return service.get(id, authentication);
     }
 
     @PostMapping

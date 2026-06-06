@@ -23,13 +23,19 @@ public class CarController {
     private final FileStorageService fileStorageService;
 
     @GetMapping
-    public CarDtos.CarPageResponse all(CarDtos.CarSearchRequest request) {
-        return service.findAll(request);
+    public CarDtos.CarPageResponse all(
+            CarDtos.CarSearchRequest request,
+            Authentication authentication
+    ) {
+        return service.findAll(request, authentication);
     }
 
     @GetMapping("/{id}")
-    public CarDtos.CarResponse get(@PathVariable Long id) {
-        return service.findById(id);
+    public CarDtos.CarResponse get(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        return service.findById(id, authentication);
     }
 
     @PreAuthorize("hasRole('ADMIN')")

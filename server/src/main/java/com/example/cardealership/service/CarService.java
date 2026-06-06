@@ -10,6 +10,7 @@ import com.example.cardealership.repository.UserRepository;
 import com.example.cardealership.service.car.CarMapper;
 import com.example.cardealership.service.car.CarSpecificationBuilder;
 import com.example.cardealership.service.car.CarValidator;
+import com.example.cardealership.web.error.MlServiceException;
 import com.example.cardealership.web.error.ResourceNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -46,6 +50,7 @@ public class CarService {
     private final CarValidator carValidator;
     private final CarMapper carMapper;
     private final CarSpecificationBuilder carSpecificationBuilder;
+    private final MlRecommendationService mlRecommendationService;
 
     @Transactional
     public CarDtos.CarResponse create(CarDtos.CreateCarRequest request, String sellerEmail) {
@@ -89,6 +94,51 @@ public class CarService {
     }
 
     public CarDtos.CarPageResponse findAll(CarDtos.CarSearchRequest request) {
+        return findAllForAdmin(request);
+    }
+
+    public CarDtos.CarPageResponse findAll(CarDtos.CarSearchRequest request, Authentication authentication) {
+        if (isAdmin(authentication)) {
+            return findAllForAdmin(request);
+        }
+
+        int normalizedPage = Math.max(defaultIfNull(request.getPage(), 0), 0);
+        int normalizedSize = Math.min(Math.max(defaultIfNull(request.getSize(), 9), 1), 50);
+        String normalizedSortBy = normalizeSortBy(request.getSortBy());
+        Sort.Direction direction = "asc".equalsIgnoreCase(request.getSortDir())
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
+
+        Pageable pageable = PageRequest.of(
+                normalizedPage,
+                normalizedSize,
+                Sort.by(direction, normalizedSortBy)
+        );
+
+        Specification<Car> specification = carSpecificationBuilder.build(request);
+
+        List<Car> visibleCars = carRepository.findAll(specification, Sort.by(direction, normalizedSortBy))
+                .stream()
+                .filter(this::isVisibleForUser)
+                .toList();
+
+        int fromIndex = Math.min((int) pageable.getOffset(), visibleCars.size());
+        int toIndex = Math.min(fromIndex + pageable.getPageSize(), visibleCars.size());
+
+        Page<Car> carPage = new PageImpl<>(
+                visibleCars.subList(fromIndex, toIndex),
+                pageable,
+                visibleCars.size()
+        );
+
+        return carMapper.toPageResponse(
+                carPage,
+                normalizedSortBy,
+                direction.name().toLowerCase()
+        );
+    }
+
+    private CarDtos.CarPageResponse findAllForAdmin(CarDtos.CarSearchRequest request) {
         int normalizedPage = Math.max(defaultIfNull(request.getPage(), 0), 0);
         int normalizedSize = Math.min(Math.max(defaultIfNull(request.getSize(), 9), 1), 50);
         String normalizedSortBy = normalizeSortBy(request.getSortBy());
@@ -116,6 +166,16 @@ public class CarService {
         return carMapper.toResponse(findActiveCarEntity(id));
     }
 
+    public CarDtos.CarResponse findById(Long id, Authentication authentication) {
+        Car car = findActiveCarEntity(id);
+
+        if (!isAdmin(authentication) && !isVisibleForUser(car)) {
+            throw new ResourceNotFoundException("Car", "id", id);
+        }
+
+        return carMapper.toResponse(car);
+    }
+
     @Transactional
     public void delete(Long id) {
         Car car = findActiveCarEntity(id);
@@ -131,6 +191,25 @@ public class CarService {
     private Car findActiveCarEntity(Long id) {
         return carRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Car", "id", id));
+    }
+
+    private boolean isVisibleForUser(Car car) {
+        try {
+            return !mlRecommendationService.isAboveMarket(car);
+        } catch (MlServiceException ex) {
+            return true;
+        }
+    }
+
+    private boolean isAdmin(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        return authentication.getAuthorities()
+                .stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch("ROLE_ADMIN"::equals);
     }
 
     private String buildDefaultListingDescription(Car car) {

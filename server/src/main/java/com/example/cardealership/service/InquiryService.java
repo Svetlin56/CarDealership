@@ -251,6 +251,14 @@ public class InquiryService {
     }
 
     @Transactional
+    public void deleteForCurrentUser(Long id, String email) {
+        Inquiry inquiry = findInquiryOrThrow(id);
+        validateUserOwnsInquiry(inquiry, email);
+
+        inquiryRepo.delete(inquiry);
+    }
+
+    @Transactional
     public void deleteForAdmin(Long id) {
         Inquiry inquiry = findInquiryOrThrow(id);
         inquiryRepo.delete(inquiry);

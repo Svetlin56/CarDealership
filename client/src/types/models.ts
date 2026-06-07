@@ -96,6 +96,13 @@ export type UnreadInquiryRepliesResponse = {
 };
 
 export type MlRecommendationApiResponse = {
+    car_id?: number | null;
+    listing_id?: number | null;
+    listing_status?: string | null;
+    listing_description?: string | null;
+    image_url?: string | null;
+    recommendation_source?: "ML" | "FALLBACK" | string | null;
+
     Year: number;
     Engine_Size: number;
     Fuel_Type: string;
@@ -105,7 +112,8 @@ export type MlRecommendationApiResponse = {
     Owner_Count: number;
     Brand: string;
     Model: string;
-    price?: number;
+
+    price?: number | null;
     predicted_price: number;
     score: number;
     value_score: number;
@@ -113,11 +121,19 @@ export type MlRecommendationApiResponse = {
     anomaly_ratio: number;
     anomaly_label: "OVERPRICED" | "UNDERVALUED" | "FAIR" | "UNKNOWN";
     car_type: string;
-    confidence: number;
+    market_match?: number | null;
+    confidence?: number | null;
     explanation: string;
 };
 
 export type MlRecommendation = {
+    carId?: number;
+    listingId?: number;
+    listingStatus?: string;
+    listingDescription?: string;
+    imageUrl?: string;
+    recommendationSource: "ML" | "FALLBACK" | string;
+
     year: number;
     engineSize: number;
     fuelType: string;
@@ -127,7 +143,8 @@ export type MlRecommendation = {
     ownerCount: number;
     brand: string;
     model: string;
-    price?: number;
+
+    price?: number | null;
     predictedPrice: number;
     score: number;
     valueScore: number;
@@ -135,7 +152,8 @@ export type MlRecommendation = {
     anomalyRatio: number;
     anomalyLabel: "OVERPRICED" | "UNDERVALUED" | "FAIR" | "UNKNOWN";
     carType: string;
-    confidence: number;
+    marketMatch?: number | null;
+    confidence?: number | null;
     explanation: string;
 };
 

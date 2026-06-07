@@ -113,6 +113,15 @@ public class InquiryController {
         return inquiryService.markReplyAsReadForCurrentUser(id, authentication.getName());
     }
 
+    @DeleteMapping("/my/{id}")
+    public ResponseEntity<Void> deleteMyInquiry(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        inquiryService.deleteForCurrentUser(id, authentication.getName());
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import http from "../api/http";
 import type { InquiryMessage, UserInquiry } from "../types/models";
 
+const MESSAGE_PREVIEW_LENGTH = 180;
 const INQUIRY_MESSAGES_UPDATED_EVENT = "inquiry-messages-updated";
 
 function formatDate(value: string) {
@@ -12,6 +13,24 @@ function formatDate(value: string) {
         hour: "2-digit",
         minute: "2-digit"
     }).format(new Date(value));
+}
+
+function normalizeMessage(message?: string | null) {
+    return message?.trim() ?? "";
+}
+
+function getMessagePreview(message?: string | null) {
+    const trimmedMessage = normalizeMessage(message);
+
+    if (trimmedMessage.length <= MESSAGE_PREVIEW_LENGTH) {
+        return trimmedMessage;
+    }
+
+    return `${trimmedMessage.slice(0, MESSAGE_PREVIEW_LENGTH).trimEnd()}...`;
+}
+
+function isLongMessage(message?: string | null) {
+    return normalizeMessage(message).length > MESSAGE_PREVIEW_LENGTH;
 }
 
 export default function MyInquiries() {
@@ -29,6 +48,7 @@ export default function MyInquiries() {
     const [editingMessageText, setEditingMessageText] = useState("");
     const [messageActionError, setMessageActionError] = useState("");
     const [messageActionLoadingId, setMessageActionLoadingId] = useState<number | null>(null);
+    const [deletingInquiryId, setDeletingInquiryId] = useState<number | null>(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -300,6 +320,33 @@ export default function MyInquiries() {
         }
     }
 
+    async function handleDeleteInquiry(id: number) {
+        if (!window.confirm("Delete this conversation?")) {
+            return;
+        }
+
+        setDeletingInquiryId(id);
+        setError("");
+
+        try {
+            await http.delete(`/inquiries/my/${id}`);
+
+            setInquiries(currentInquiries =>
+                currentInquiries.filter(inquiry => inquiry.id !== id)
+            );
+
+            if (selectedInquiry?.id === id) {
+                closeModal();
+            }
+
+            window.dispatchEvent(new Event(INQUIRY_MESSAGES_UPDATED_EVENT));
+        } catch {
+            setError("Could not delete this conversation.");
+        } finally {
+            setDeletingInquiryId(null);
+        }
+    }
+
     return (
         <div>
             <div className="d-flex justify-content-between align-items-center mb-3">
@@ -317,80 +364,154 @@ export default function MyInquiries() {
 
             {error && <div className="alert alert-danger">{error}</div>}
 
-            {loading && (
-                <div className="alert alert-info">
-                    Loading your inquiries...
-                </div>
-            )}
+            <div className="table-responsive inquiry-table-wrapper">
+                <table className="table table-striped table-hover align-middle mb-0">
+                    <thead className="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Listing ID</th>
+                        <th>Car</th>
+                        <th>Message</th>
+                        <th>Status</th>
+                        <th>Created at</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
 
-            {!loading && inquiries.length === 0 && (
-                <div className="alert alert-secondary">
-                    You have not sent any inquiries yet.
-                </div>
-            )}
+                    <tbody>
+                    {loading && (
+                        <tr>
+                            <td colSpan={7} className="text-center py-4">
+                                Loading your inquiries...
+                            </td>
+                        </tr>
+                    )}
 
-            <div className="row g-3">
-                {!loading && inquiries.map(inquiry => {
-                    const hasReply = Boolean(inquiry.adminReplyMessage) || inquiry.unreadAdminMessagesCount > 0;
-                    const hasUnreadReply = inquiry.unreadAdminMessagesCount > 0;
+                    {!loading && inquiries.length === 0 && (
+                        <tr>
+                            <td colSpan={7} className="text-center py-4 text-muted">
+                                You have not sent any inquiries yet.
+                            </td>
+                        </tr>
+                    )}
 
-                    return (
-                        <div className="col-12" key={inquiry.id}>
-                            <div className={`card shadow-sm ${hasUnreadReply ? "border-primary" : ""}`}>
-                                <div className="card-body">
-                                    <div className="d-flex justify-content-between gap-3 align-items-start">
-                                        <div>
-                                            <h5 className="card-title mb-1">
-                                                {inquiry.carTitle}
-                                            </h5>
+                    {!loading && inquiries.map(inquiry => {
+                        const message = normalizeMessage(inquiry.message);
+                        const hasReply = Boolean(inquiry.adminReplyMessage) || inquiry.unreadAdminMessagesCount > 0;
+                        const hasUnreadReply = inquiry.unreadAdminMessagesCount > 0;
 
-                                            <div className="text-muted small">
-                                                Listing #{inquiry.listingId} • Sent at {formatDate(inquiry.createdAt)}
-                                            </div>
-                                        </div>
+                        return (
+                            <tr key={inquiry.id}>
+                                <td>{inquiry.id}</td>
+                                <td>{inquiry.listingId}</td>
+                                <td>{inquiry.carTitle}</td>
 
-                                        {hasUnreadReply && (
-                                            <span className="badge text-bg-primary">
-                                                New admin reply
-                                            </span>
-                                        )}
-
-                                        {!hasUnreadReply && hasReply && (
-                                            <span className="badge text-bg-success">
-                                                Has reply
-                                            </span>
-                                        )}
-
-                                        {!hasReply && (
-                                            <span className="badge text-bg-secondary">
-                                                Waiting for reply
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    <div className="mt-3">
-                                        <span className="text-muted small d-block mb-1">
-                                            Your message
-                                        </span>
-                                        <p className="mb-0 inquiry-user-message-preview">
-                                            {inquiry.message || "No message"}
-                                        </p>
-                                    </div>
-
-                                    <div className="mt-3">
+                                <td className="inquiry-message-cell">
+                                    {message ? (
                                         <button
                                             type="button"
-                                            className="btn btn-outline-primary"
+                                            className="inquiry-message-preview"
+                                            title="Open conversation"
+                                            onClick={() => openInquiry(inquiry)}
+                                        >
+                                            <span className="inquiry-message-preview-text">
+                                                {getMessagePreview(inquiry.message)}
+                                            </span>
+
+                                            {isLongMessage(inquiry.message) && (
+                                                <span className="inquiry-read-more">
+                                                    View conversation
+                                                </span>
+                                            )}
+                                        </button>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            className="btn btn-sm btn-outline-primary"
                                             onClick={() => openInquiry(inquiry)}
                                         >
                                             Open conversation
                                         </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
+                                    )}
+                                </td>
+
+                                <td>
+                                    {hasUnreadReply && (
+                                        <span className="badge text-bg-primary">
+                                            New admin reply
+                                        </span>
+                                    )}
+
+                                    {!hasUnreadReply && hasReply && (
+                                        <span className="badge text-bg-success">
+                                            Has reply
+                                        </span>
+                                    )}
+
+                                    {!hasReply && (
+                                        <span className="badge text-bg-secondary">
+                                            Waiting for reply
+                                        </span>
+                                    )}
+                                </td>
+                                <td>{formatDate(inquiry.createdAt)}</td>
+
+                                {/*From Uiverse.io by vinodjangid07 */}
+                                <td>
+                                    <button
+                                        type="button"
+                                        className="delete-button-inq"
+                                        aria-label={`Delete inquiry ${inquiry.id}`}
+                                        title="Delete conversation"
+                                        disabled={deletingInquiryId === inquiry.id}
+                                        onClick={() => handleDeleteInquiry(inquiry.id)}
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 69 14"
+                                            className="svgIcon bin-top"
+                                        >
+                                            <g clipPath={`url(#clip0_35_24_my_inquiry_${inquiry.id})`}>
+                                                <path
+                                                    fill="black"
+                                                    d="M20.8232 2.62734L19.9948 4.21304C19.8224 4.54309 19.4808 4.75 19.1085 4.75H4.92857C2.20246 4.75 0 6.87266 0 9.5C0 12.1273 2.20246 14.25 4.92857 14.25H64.0714C66.7975 14.25 69 12.1273 69 9.5C69 6.87266 66.7975 4.75 64.0714 4.75H49.8915C49.5192 4.75 49.1776 4.54309 49.0052 4.21305L48.1768 2.62734C47.3451 1.00938 45.6355 0 43.7719 0H25.2281C23.3645 0 21.6549 1.00938 20.8232 2.62734ZM64.0023 20.0648C64.0397 19.4882 63.5822 19 63.0044 19H5.99556C5.4178 19 4.96025 19.4882 4.99766 20.0648L8.19375 69.3203C8.44018 73.0758 11.6746 76 15.5712 76H53.4288C57.3254 76 60.5598 73.0758 60.8062 69.3203L64.0023 20.0648Z"
+                                                />
+                                            </g>
+
+                                            <defs>
+                                                <clipPath id={`clip0_35_24_my_inquiry_${inquiry.id}`}>
+                                                    <rect fill="white" height="14" width="69" />
+                                                </clipPath>
+                                            </defs>
+                                        </svg>
+
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 69 57"
+                                            className="svgIcon bin-bottom"
+                                        >
+                                            <g clipPath={`url(#clip0_35_22_my_inquiry_${inquiry.id})`}>
+                                                <path
+                                                    fill="black"
+                                                    d="M20.8232 -16.3727L19.9948 -14.787C19.8224 -14.4569 19.4808 -14.25 19.1085 -14.25H4.92857C2.20246 -14.25 0 -12.1273 0 -9.5C0 -6.8727 2.20246 -4.75 4.92857 -4.75H64.0714C66.7975 -4.75 69 -6.8727 69 -9.5C69 -12.1273 66.7975 -14.25 64.0714 -14.25H49.8915C49.5192 -14.25 49.1776 -14.4569 49.0052 -14.787L48.1768 -16.3727C47.3451 -17.9906 45.6355 -19 43.7719 -19H25.2281C23.3645 -19 21.6549 -17.9906 20.8232 -16.3727ZM64.0023 1.0648C64.0397 0.4882 63.5822 0 63.0044 0H5.99556C5.4178 0 4.96025 0.4882 4.99766 1.0648L8.19375 50.3203C8.44018 54.0758 11.6746 57 15.5712 57H53.4288C57.3254 57 60.5598 54.0758 60.8062 50.3203L64.0023 1.0648Z"
+                                                />
+                                            </g>
+
+                                            <defs>
+                                                <clipPath id={`clip0_35_22_my_inquiry_${inquiry.id}`}>
+                                                    <rect fill="white" height="57" width="69" />
+                                                </clipPath>
+                                            </defs>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        );
+                    })}
+                    </tbody>
+                </table>
             </div>
 
             {selectedInquiry && (
@@ -571,6 +692,15 @@ export default function MyInquiries() {
                                 </div>
 
                                 <div className="modal-footer">
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-danger me-auto"
+                                        disabled={deletingInquiryId === selectedInquiry.id}
+                                        onClick={() => handleDeleteInquiry(selectedInquiry.id)}
+                                    >
+                                        {deletingInquiryId === selectedInquiry.id ? "Deleting..." : "Delete conversation"}
+                                    </button>
+
                                     <button
                                         type="button"
                                         className="btn btn-outline-secondary"

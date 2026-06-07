@@ -55,6 +55,7 @@ function toRecommendation(car: MlRecommendationApiResponse): MlRecommendation {
         anomalyLabel: car.anomaly_label,
         carType: car.car_type,
         marketMatch: car.market_match,
+        confidence: car.confidence,
         explanation: car.explanation
     };
 }
@@ -91,7 +92,12 @@ function resolveImageUrl(imageUrl?: string): string | null {
 }
 
 function getPriceDifference(car: MlRecommendation): number | null {
-    if (car.price === undefined || car.price === null || car.predictedPrice === undefined || car.predictedPrice === null) {
+    if (
+        car.price === undefined ||
+        car.price === null ||
+        car.predictedPrice === undefined ||
+        car.predictedPrice === null
+    ) {
         return null;
     }
 
@@ -134,12 +140,34 @@ function getDealLabel(car: MlRecommendation): string {
     return "Market estimate";
 }
 
-function getMarketMatchLabel(marketMatch: number): string {
+function getMarketPriceMatchValue(marketMatch?: number | null): string {
     if (marketMatch === undefined || marketMatch === null || Number.isNaN(marketMatch)) {
-        return "Market match: N/A";
+        return "N/A";
     }
 
-    return `Market match: ${Math.round(marketMatch * 100)}%`;
+    return `${Math.round(marketMatch * 100)}%`;
+}
+
+function getMarketPriceMatchDescription(marketMatch?: number | null): string {
+    if (marketMatch === undefined || marketMatch === null || Number.isNaN(marketMatch)) {
+        return "Market price comparison is unavailable.";
+    }
+
+    const percentage = Math.round(marketMatch * 100);
+
+    if (percentage >= 90) {
+        return "Very close to estimated market price.";
+    }
+
+    if (percentage >= 75) {
+        return "Close to estimated market price.";
+    }
+
+    if (percentage >= 50) {
+        return "Price differs noticeably from market estimate.";
+    }
+
+    return "Price differs significantly from estimated market value.";
 }
 
 function buildMarketMessage(car: MlRecommendation): string {
@@ -241,7 +269,9 @@ export default function Recommendations() {
         <div className="container mt-4 recommendations-page">
             <section className="recommendation-hero mb-4">
                 <div>
-                    <span className="text-uppercase text-primary fw-semibold small">Personalized inventory</span>
+                    <span className="text-uppercase text-primary fw-semibold small">
+                        Personalized inventory
+                    </span>
                     <h2 className="mb-2">Recommended for you</h2>
                     <p className="text-muted mb-0">
                         Cars selected from active listings based on budget, vehicle characteristics and estimated market value.
@@ -296,7 +326,11 @@ export default function Recommendations() {
                                 </p>
                             </div>
 
-                            <button type="button" className="btn btn-outline-secondary btn-sm" onClick={clearPreferences}>
+                            <button
+                                type="button"
+                                className="btn btn-outline-secondary btn-sm"
+                                onClick={clearPreferences}
+                            >
                                 Clear filters
                             </button>
                         </div>
@@ -332,7 +366,9 @@ export default function Recommendations() {
                                 >
                                     <option value="">All fuel types</option>
                                     {fuelOptions.map(option => (
-                                        <option key={option} value={option}>{option}</option>
+                                        <option key={option} value={option}>
+                                            {option}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
@@ -345,7 +381,9 @@ export default function Recommendations() {
                                 >
                                     <option value="">All transmissions</option>
                                     {transmissionOptions.map(option => (
-                                        <option key={option} value={option}>{option}</option>
+                                        <option key={option} value={option}>
+                                            {option}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
@@ -358,7 +396,9 @@ export default function Recommendations() {
                                 >
                                     <option value="">All car types</option>
                                     {carTypeOptions.map(option => (
-                                        <option key={option} value={option}>{option}</option>
+                                        <option key={option} value={option}>
+                                            {option}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
@@ -387,7 +427,10 @@ export default function Recommendations() {
                         const detailsPath = car.carId ? `/cars/${car.carId}` : null;
 
                         return (
-                            <div key={`${car.carId ?? car.brand}-${car.model}-${index}`} className="col-12 col-md-6 col-xl-4">
+                            <div
+                                key={`${car.carId ?? car.brand}-${car.model}-${index}`}
+                                className="col-12 col-md-6 col-xl-4"
+                            >
                                 <article className="card recommendation-card h-100 border-0 shadow-sm">
                                     <div className="recommendation-image-wrapper bg-light">
                                         {imageSrc ? (
@@ -457,15 +500,41 @@ export default function Recommendations() {
                                             <p className="text-muted small mb-0">{car.explanation}</p>
                                         </div>
 
-                                        <div className="d-flex flex-wrap gap-2 mb-3">
-                                            <span className="badge text-bg-light border">{car.carType}</span>
-                                            <span className="badge text-bg-light border">{getMarketMatchLabel(car.marketMatch)}</span>
-                                            {car.recommendationSource === "ML" && (
-                                                <span className="badge text-bg-light border">ML scored</span>
-                                            )}
-                                            {car.goodDeal && (
-                                                <span className="badge text-bg-success">Below estimate</span>
-                                            )}
+                                        <div className="mb-3">
+                                            <div
+                                                className="market-match-summary rounded border p-2 mb-2"
+                                                title="Shows how close the listed price is to the ML-estimated market price."
+                                            >
+                                                <span className="text-muted small d-block">
+                                                    Market price match
+                                                </span>
+
+                                                <strong>
+                                                    {getMarketPriceMatchValue(car.marketMatch)}
+                                                </strong>
+
+                                                <span className="text-muted small d-block">
+                                                    {getMarketPriceMatchDescription(car.marketMatch)}
+                                                </span>
+                                            </div>
+
+                                            <div className="d-flex flex-wrap gap-2">
+                                                <span className="badge text-bg-light border">
+                                                    {car.carType}
+                                                </span>
+
+                                                {car.recommendationSource === "ML" && (
+                                                    <span className="badge text-bg-light border">
+                                                        ML scored
+                                                    </span>
+                                                )}
+
+                                                {car.goodDeal && (
+                                                    <span className="badge text-bg-success">
+                                                        Below estimate
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
 
                                         <div className="mt-auto d-flex gap-2">

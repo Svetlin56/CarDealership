@@ -1,6 +1,8 @@
 import json
 import os
+
 import joblib
+import numpy as np
 import pandas as pd
 
 from sklearn.compose import ColumnTransformer
@@ -28,8 +30,27 @@ MODEL_FEATURES = [
 ]
 
 TARGET_COLUMN = "Price"
-MODEL_VERSION = "1.2.0"
+MODEL_VERSION = "1.2.1"
 SCHEMA_VERSION = "2"
+
+
+def calculate_mape(y_true, y_pred):
+    y_true_array = np.asarray(y_true, dtype=float)
+    y_pred_array = np.asarray(y_pred, dtype=float)
+
+    non_zero_mask = y_true_array != 0
+
+    if not np.any(non_zero_mask):
+        return None
+
+    return float(
+        np.mean(
+            np.abs(
+                (y_true_array[non_zero_mask] - y_pred_array[non_zero_mask])
+                / y_true_array[non_zero_mask]
+            )
+        ) * 100
+    )
 
 
 def main():
@@ -68,20 +89,29 @@ def main():
     mae = float(mean_absolute_error(y_test, predictions))
     rmse = float(mean_squared_error(y_test, predictions) ** 0.5)
     r2 = float(r2_score(y_test, predictions))
+    mape = calculate_mape(y_test, predictions)
+
+    approximate_accuracy = None
+    if mape is not None:
+        approximate_accuracy = max(0.0, 100.0 - mape)
 
     os.makedirs(ARTIFACT_DIR, exist_ok=True)
     joblib.dump(pipeline, ARTIFACT_PATH)
+
+    metrics = {
+        "mae": round(mae, 4),
+        "rmse": round(rmse, 4),
+        "r2": round(r2, 4),
+        "mape": round(mape, 4) if mape is not None else None,
+        "approximate_accuracy": round(approximate_accuracy, 4) if approximate_accuracy is not None else None
+    }
 
     metadata = {
         "model_version": MODEL_VERSION,
         "schema_version": SCHEMA_VERSION,
         "target_column": TARGET_COLUMN,
         "model_features": MODEL_FEATURES,
-        "metrics": {
-            "mae": round(mae, 4),
-            "rmse": round(rmse, 4),
-            "r2": round(r2, 4)
-        }
+        "metrics": metrics
     }
 
     with open(METADATA_PATH, "w", encoding="utf-8") as f:
@@ -93,6 +123,13 @@ def main():
     print(f"MAE: {mae:.4f}")
     print(f"RMSE: {rmse:.4f}")
     print(f"R^2: {r2:.4f}")
+
+    if mape is not None and approximate_accuracy is not None:
+        print(f"MAPE: {mape:.2f}%")
+        print(f"Approximate accuracy: {approximate_accuracy:.2f}%")
+    else:
+        print("MAPE: N/A")
+        print("Approximate accuracy: N/A")
 
 
 if __name__ == "__main__":

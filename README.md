@@ -252,9 +252,9 @@ Is consumed by the Spring Boot backend through the configured ML service URL
 
 Dataset source:
 
-The dataset used for training and recommendation logic is based on the Car Price Prediction Dataset by Sukhmandeep Singh Brar, available on Kaggle:
+The dataset used for training and recommendation logic is based on the Car Price Prediction Dataset by Israt hasan, available on Kaggle:
 
-https://www.kaggle.com/datasets/sukhmandeepsinghbrar/car-price-prediction-dataset/data
+https://www.kaggle.com/datasets/ihasan88/car-price-prediction-and-vehicle-specifications
 
 The dataset is used only for educational and demonstration purposes in the context of this project.
 
